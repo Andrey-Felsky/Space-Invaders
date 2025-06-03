@@ -97,6 +97,5 @@ void loopGame()
 int main()
 {
     loopGame();
-    system("pause"); // só no Windows
     return 0;
 }
