@@ -73,7 +73,7 @@ void loopGame()
 {
     while (gameRunning)
     {
-        if(key == TK_CLOSE){
+        if(key == TK_CLOSE || key == TK_ESCAPE){
             gameRunning = false;
             return;
         }
