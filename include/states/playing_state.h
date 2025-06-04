@@ -5,6 +5,7 @@ void playing_enter()
 
 void playing_update()
 {
+    key = terminal_read();
     return;
 }
 

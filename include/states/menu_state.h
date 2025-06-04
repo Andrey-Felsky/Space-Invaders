@@ -6,23 +6,22 @@
 
 void menu_enter()
 {
-    terminal_print(0 , 0, "Hellow");
+    terminal_print(0 , 0, "Menu Enter");
     terminal_refresh();
     return;
 }
 
 void menu_update()
 {
-    nextState = STATE_NONE;
+    nextState = STATE_PLAYING;
     stateChanged = true;
     key = terminal_read();
-    
+
     return;
 }
 
 void menu_exit()
 {
-    cout << "Menu Exit";
-    gameRunning = false;
+    terminal_print(0 , 0, "Menu Exit");
     return;
 }
