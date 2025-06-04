@@ -101,5 +101,6 @@ int main()
 {
     init();
     loopGame();
+    terminal_close();
     return 0;
 }
