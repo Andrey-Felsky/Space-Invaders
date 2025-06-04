@@ -1,24 +1,17 @@
-# compilador padrão (cada um pode sobrescrever com make CXX=g++)
-CXX ?= g++
+CXX = g++
+CXXFLAGS = -std=c++17 -Wall -Iinclude -Isrc -I. -j
+LDFLAGS = -mconsole -Llib
+LDLIBS = -lBearLibTerminal
 
-# flags de compilação
-CXXFLAGS = -Wall -Wextra -g3 -Iinclude
-
-# arquivos fonte
 SRC = main.cpp
-OBJ = $(SRC:.cpp=.o)
-
-# pasta de saída
 OUTDIR = output
 OUTFILE = $(OUTDIR)/main.exe
 
-# regra padrão
 all: $(OUTFILE)
 
-# regra para compilar
 $(OUTFILE): $(SRC)
 	mkdir -p $(OUTDIR)
-	$(CXX) $(CXXFLAGS) $(SRC) -o $(OUTFILE)
+	$(CXX) $(CXXFLAGS) $(SRC) -o $(OUTFILE) $(LDFLAGS) $(LDLIBS)
 
 clean:
 	rm -rf $(OUTDIR)

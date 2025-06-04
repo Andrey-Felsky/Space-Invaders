@@ -6,7 +6,12 @@ using namespace std;
 #include <string>
 #include <windows.h>
 
+const int w_height = 44;
+const int w_width = 88;
+
 bool gameRunning = true;
+
+int key;
 
 struct GameElements {
     char person = char(36);
