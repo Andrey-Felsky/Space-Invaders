@@ -1,10 +1,7 @@
 // libs
 #include <BearLibTerminal.h>
-#include <conio.h>
-#include <locale.h>
-#include <iostream>
-#include <windows.h>
 // person libs
+#include "core/init.h"
 #include "game_elements.h"
 #include "state_machine.h"
 // states
@@ -102,12 +99,7 @@ void loopGame()
 
 int main()
 {
-    terminal_open();
-    std::string config = "window: title='Ispace Invaders', size= " + std::to_string(w_width) + "x" + std::to_string(w_height) + ", fullscreen=true";
-    terminal_set(config.c_str());
-    terminal_set("font: Media/HackNerdFontMono-Regular.ttf, size = 11");
-    terminal_clear();
-
+    init();
     loopGame();
     return 0;
 }

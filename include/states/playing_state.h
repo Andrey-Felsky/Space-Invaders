@@ -1,3 +1,5 @@
+#pragma once
+
 void playing_enter()
 {
     return;

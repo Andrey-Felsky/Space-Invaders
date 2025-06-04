@@ -1,3 +1,5 @@
+#pragma once
+
 void game_over_enter()
 {
     return;

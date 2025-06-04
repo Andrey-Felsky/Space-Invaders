@@ -1,3 +1,5 @@
+#pragma once
+
 #include "BearLibTerminal.h"
 
 #include <conio.h>

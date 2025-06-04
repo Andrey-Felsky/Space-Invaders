@@ -1,7 +1,5 @@
 #pragma once
 
-using namespace std;
-
 #include <sstream>
 #include <string>
 #include <windows.h>
