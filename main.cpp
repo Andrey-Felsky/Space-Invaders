@@ -5,9 +5,9 @@
 #include "game_elements.h"
 #include "state_machine.h"
 // states
-#include "./include/states/menu_state.h"
-#include "./include/states/playing_state.h"
-#include "./include/states/game_over_state.h"
+#include "./include/states/menu/menu_state.h"
+#include "./include/states/playing/playing_state.h"
+#include "./include/states/game_over/game_over_state.h"
 
 bool stateChanged = false;
 
