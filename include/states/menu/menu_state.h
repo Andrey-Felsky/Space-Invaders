@@ -15,15 +15,17 @@ void menu_enter()
 
 void menu_update()
 {
+    terminal_print(0 , 1, "Menu Update");
     nextState = STATE_PLAYING;
-    stateChanged = true;
     key = terminal_read();
-
+    stateChanged = true;
+    terminal_refresh();
     return;
 }
 
 void menu_exit()
 {
-    terminal_print(0 , 0, "Menu Exit");
+    terminal_print(0 , 3, "Menu Exit");
+    terminal_refresh();
     return;
 }
