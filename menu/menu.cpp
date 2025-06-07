@@ -1,62 +1,73 @@
 #include <iostream>
 #include <windows.h>
 #include <conio.h>
-#include <stdlib.h>
-#include <time.h>
-#include "gameElements.cpp"
+#include "../utils/cleanScreen/cleanScreen.h"
 using namespace std;
 
-//função que limpa a tela do console
-void ClearConsole() {
-    HANDLE out = GetStdHandle(STD_OUTPUT_HANDLE);
-    CONSOLE_CURSOR_INFO cursorInfo;
-    GetConsoleCursorInfo(out, &cursorInfo);
-    cursorInfo.bVisible = false;
-    SetConsoleCursorInfo(out, &cursorInfo);
-    COORD pos = {0, 0};
-    SetConsoleCursorPosition(out, pos);
-}
+const int N_OPCOES = 4;
+string opcoes[N_OPCOES] = { "  Jogar   ", "Instrucoes", "  Ranking ", "  Sair    " };
+int selectedItem = 0;
 
-// função que mostra para o jogardo como jogar
-void instructiongame(){
-    ClearConsole();
-    cout << "\033c";
-    cout << ">> Como Jogar <<\n\n1 Movimento e Controles:\nUse as teclas 'W''A''S''D' para mover seu personagem. Use o 'A' e 'D' para mover o cursor, e 'Enter' para selecionar a acao.\n";
-    cout << "\n2- Acoes de Batalha: \nAo iniciar uma batalha, voce tera 4 opcoes: 'Atacar' (gera um ataque no inimigo), 'Defender' (defende do inimigo), 'Fugir' (sai do combate), 'Itens' (abre inventario, para utilizar algum item coletado).\n";
-    cout << "\n3- Mecanica da Morte Permanente: \nRoguelike segue o sistema de Permadeath , o que significa que, se seu personagem morrer, voce tera que recomecar a partida desde o inicio.\n";
-    cout << "\nPressione 'Enter' para voltar ao Menu.";
+void exibirInstrucoes() {
+    cleanScreen();
+    cout << "=== INSTRUCOES ===\n";
+    cout << "- Use as teclas A e D para mover a nave\n";
+    cout << "- Pressione ESPACO para atirar\n";
+    cout << "- Derrote todos os inimigos antes que eles cheguem até sua base\n";
+    cout << "- Evite ser atingido pelos inimigos\n\n";
+    cout << "Pressione ENTER para voltar ao menu...";
+    cin.ignore();
     cin.get();
-    cout << "\033c"; // Sai do jogo e volta pro menu.
+    cleanScreen();
 }
 
-// função que mostra os itens para o jogador
-void Itens(){
-    cout << "\033c";
-    cout << ">>>>> ITENS <<<<<\n\n";
-    for (int i=0;i<4;i++){
-    cout << itens[i].name << ": " << itens[i].description << endl << endl;
+void exibirRanking() {
+    cleanScreen();
+    cout << "=== RANKING ===\n";
+    //falta fazer
+    cin.ignore();
+    cin.get();
+    cleanScreen();
+}
+
+void renderMenu() {
+    cleanScreen();
+    cout << "===== SPACE INVADERS =====\n\n";
+    for (int i = 0; i < N_OPCOES; i++) {
+        if (i == selectedItem) {
+            cout << ">> " << opcoes[i] << " <<\n";
+        } else {
+            cout << "   " << opcoes[i] << "\n";
+        }
     }
-    cout << "pressione Enter para voltar ao Menu.";
-    cin.get();
-    cout << "\033c";
- }
+    cleanScreen();
+}
 
+int navegarMenu() {
+    cleanScreen();
+    while (true) {
+        renderMenu();
+        char tecla = _getch();
+        if (tecla == 'w' || tecla == 72) { // cima
+            selectedItem = (selectedItem - 1 + N_OPCOES) % N_OPCOES;
+        } else if (tecla == 's' || tecla == 80) { // baixo
+            selectedItem = (selectedItem + 1) % N_OPCOES;
+        } else if (tecla == 13) { // Enter
+            return selectedItem;
+        }
+    }
+}
 
-const int N_OPCOES = 5;
-int selectedMenuItem = 0, MenuItem = 0, Menu = 0;
-string Opcoes[N_OPCOES] = {"  Jogar   ", "Como Jogar", "  Itens   ", "Historico", "  Sair    "};
+void menu() {
+    cleanScreen();
+    while (true) {
+        int opcao = navegarMenu();
 
-//renderiza o menu, limpando e reescrevendo com "> ".
-void RenderMenu(int MenuItem){ 
-    _kbhit();
-    ClearConsole();
-    cout << "= " + titleGame + " =\n";
-    cout << "|================|\n";
-    for (int i = 0; i < N_OPCOES; i++){
-            if (MenuItem == i){
-            cout << "|>> " << Opcoes[i] << " <<|" << endl;
-            }else{
-            cout << "|   " << Opcoes[i] << "   |" << endl;
-        }   cout << "|================|\n";
+        switch (opcao) {
+            case 0: return; 
+            case 1: cin.ignore(); exibirInstrucoes(); break;
+            case 2: cin.ignore(); exibirRanking(); break;
+            case 3: exit(0); 
+        }
     }
 }

@@ -5,10 +5,17 @@
 #include "mapa/mapa.h"
 #include "enemy/enemy.h"
 #include "logic/logic.h"
+#include "menu/menu.h"
+#include "utils/cleanScreen/cleanScreen.h"
 
 using namespace std;
 
-// posição inicial da nave
+//COMANDO PARA COMPILAR: 
+//g++ main.cpp mapa/mapa.cpp enemy/enemy.cpp logic/logic.cpp menu/menu.cpp utils/cleanScreen/cleanScreen.cpp -o output/main.exe
+
+//ATENCAO:
+// criar um arquivo novo ou pasta incluir no comando
+
 const int largura = 30;
 const int altura = 20;
 char mapa[altura][largura];
@@ -24,13 +31,7 @@ int tiroX = 0, tiroY = 0;
 int score = 0;
 bool gameOver = false;
 
-
-void cleanScreen() {
-    COORD coord = {0, 0};
-    SetConsoleCursorPosition(GetStdHandle(STD_OUTPUT_HANDLE), coord);
-}
-
-void entrada() {
+void input() {
     if (_kbhit()) {
         char tecla = _getch();
         if (tecla == 'a' || tecla == 'A') {
@@ -50,31 +51,30 @@ void entrada() {
 }
 
 int main() {
-    // inicializa os inimigos
-    inicializarInimigos();
-
-    cout << "SPACE INVADERS TERMINAL" << endl;
-    cout << "Use A/D para mover e ESPACO para atirar" << endl;
-    cout << "Pressione ENTER para comecar...";
-    cin.get();
+    menu(); // inicializa o menu
+    initEnemy(); // inicializa os inimigos
+    hideCursor(); // limpa o cursor
 
     // loop principal do jogo
     while (!gameOver) {
-        cleanScreen();
-        render();
-        entrada();
-        updateTire();
-        checkCollisions();
-        moveEnemies();
-        checkEndOfGame();
-        Sleep(50);
+        cleanScreen(); //limpa a tela
+        render(); //renderiza o mapa, enimigos e tiros
+        input(); // recebe os dados do player
+        updateTire(); // atualiza os tiros
+        checkCollisions(); // checa as colisões 
+        moveEnemies(); // logica para movimentaçao dos inimigos
+        checkEndOfGame(); // funcao que checa se chegou no final do jogo
+
+        Sleep(30); 
+        // usar essa variavel para icrementar a dificuldade 
+        //ex: quanto maior o numero dentro do Sleep() mais divagar fica o jogo
     }
 
-    // desenha última tela e mostra score
-    cleanScreen();
-    render();
-    cout << "\nScore final: " << score << endl;
-    cout << "Obrigado por jogar!\n";
+    //falta iplementar o gameOver e score
+    if(gameOver){
+        cout << "\nScore final: " << score << endl;
+        cout << "Obrigado por jogar!\n";
+    }
 
     return 0;
 }

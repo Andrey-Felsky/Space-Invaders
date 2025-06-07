@@ -3,7 +3,7 @@
 
 int dirInimigo = 1;
 
-void inicializarInimigos() {
+void initEnemy() {
     for (int i = 0; i < 5; i++) {
         inimigos[i][0] = 2 + i * 5; // x
         inimigos[i][1] = 2;         // y
