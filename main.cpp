@@ -1,5 +1,4 @@
 // libs
-#include <BearLibTerminal.h>
 // person libs
 #include "core/init.h"
 #include "game_elements.h"
@@ -70,11 +69,6 @@ void loopGame()
 {
     while (gameRunning)
     {
-        if(key == TK_CLOSE || key == TK_ESCAPE){
-            gameRunning = false;
-            return;
-        }
-
         switchState();
 
         switch (currentState)
@@ -101,6 +95,6 @@ int main()
 {
     init();
     loopGame();
-    terminal_close();
+    
     return 0;
 }

@@ -1,6 +1,5 @@
 #pragma once
 
-#include "BearLibTerminal.h"
 
 #include "states/playing/input.h"
 #include "states/playing/update.h"
@@ -8,7 +7,7 @@
 
 void playing_enter()
 {
-    terminal_print(0 , 0, "Playing Enter");
+    
     return;
 }
 
