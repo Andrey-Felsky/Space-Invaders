@@ -1,17 +1,20 @@
 #include <iostream>
 #include <windows.h>
 #include <conio.h>
+#include <chrono>
 
 #include "mapa/mapa.h"
 #include "enemy/enemy.h"
 #include "logic/logic.h"
 #include "menu/menu.h"
+#include "ranking/score.h"
 #include "utils/cleanScreen/cleanScreen.h"
 
 using namespace std;
+using namespace std::chrono;
 
 //COMANDO PARA COMPILAR: 
-//g++ main.cpp mapa/mapa.cpp enemy/enemy.cpp logic/logic.cpp menu/menu.cpp utils/cleanScreen/cleanScreen.cpp -o output/main.exe
+//g++ main.cpp mapa/mapa.cpp enemy/enemy.cpp logic/logic.cpp menu/menu.cpp ranking/score.cpp utils/cleanScreen/cleanScreen.cpp -o output/main.exe
 
 //ATENCAO:
 // criar um arquivo novo ou pasta incluir no comando
@@ -50,10 +53,20 @@ void input() {
     }
 }
 
-int main() {
-    menu(); // inicializa o menu
+void game(){
+    // zera estado do jogo
+    gameOver = false;
+    tiroAtivo = false;
+    score = 0;
+    naveX = largura / 2;
     initEnemy(); // inicializa os inimigos
-    hideCursor(); // limpa o cursor
+
+    system("cls");
+    string nome;
+    cout << "Digite seu nome: ";
+    cin >> nome;
+
+    auto inicio = high_resolution_clock::now();
 
     // loop principal do jogo
     while (!gameOver) {
@@ -69,11 +82,30 @@ int main() {
         // usar essa variavel para icrementar a dificuldade 
         //ex: quanto maior o numero dentro do Sleep() mais divagar fica o jogo
     }
+    system("cls");
+    auto fim = high_resolution_clock::now();
+    duration<float> duracao = fim - inicio;
 
-    //falta iplementar o gameOver e score
-    if(gameOver){
-        cout << "\nScore final: " << score << endl;
-        cout << "Obrigado por jogar!\n";
+    //render();
+    resetColor(); //necessario para o menu nao mudar de cor
+    cout << "\nScore final: " << score << endl;
+
+    saveScore(nome, score, duracao.count());
+
+    cout << "\nPressione ENTER para voltar ao menu...";
+    cin.ignore();
+    cin.get();
+
+    system("cls");
+}
+
+int main() {
+    system("cls");
+    hideCursor();
+
+    while (true) {
+        menu();         
+        game();  
     }
 
     return 0;

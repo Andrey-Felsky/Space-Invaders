@@ -2,6 +2,7 @@
 #include "../enemy/enemy.h" 
 #include <iostream>
 
+
 void updateTire() {
     if (tiroAtivo) {
         tiroY--;
@@ -27,7 +28,7 @@ void checkEndOfGame() {
     for (int i = 0; i < 5; i++) {
         if (inimigoVivo[i] && inimigos[i][1] >= 19) {
             gameOver = true;
-            std::cout << "Você perdeu! Inimigos invadiram a base.\n";
+            //std::cout << "Você perdeu! Inimigos invadiram a base.\n";
         }
     }
 

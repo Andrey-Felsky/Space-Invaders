@@ -2,8 +2,9 @@
 #include "cleanScreen.h"
 
 void cleanScreen() {
+    HANDLE hConsole = GetStdHandle(STD_OUTPUT_HANDLE);
     COORD coord = {0, 0};
-    SetConsoleCursorPosition(GetStdHandle(STD_OUTPUT_HANDLE), coord);
+    SetConsoleCursorPosition(hConsole, coord);
 }
 void hideCursor() {
     HANDLE consoleHandle = GetStdHandle(STD_OUTPUT_HANDLE);
@@ -11,4 +12,8 @@ void hideCursor() {
     info.dwSize = 100;
     info.bVisible = FALSE;
     SetConsoleCursorInfo(consoleHandle, &info);
+}
+void resetColor() {
+    HANDLE hConsole = GetStdHandle(STD_OUTPUT_HANDLE);
+    SetConsoleTextAttribute(hConsole, 7);
 }

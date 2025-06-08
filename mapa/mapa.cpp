@@ -1,5 +1,5 @@
 #include "mapa.h"
-#include "../utils/gameElements.cpp"
+#include "../utils/gameElements.h"
 #include <iostream>
 #include <windows.h>
 

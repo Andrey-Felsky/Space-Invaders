@@ -1,6 +1,7 @@
 #include <iostream>
 #include <windows.h>
 #include <conio.h>
+#include "../ranking/score.h"
 #include "../utils/cleanScreen/cleanScreen.h"
 using namespace std;
 
@@ -9,7 +10,7 @@ string opcoes[N_OPCOES] = { "  Jogar   ", "Instrucoes", "  Ranking ", "  Sair   
 int selectedItem = 0;
 
 void exibirInstrucoes() {
-    cleanScreen();
+    system("cls");
     cout << "=== INSTRUCOES ===\n";
     cout << "- Use as teclas A e D para mover a nave\n";
     cout << "- Pressione ESPACO para atirar\n";
@@ -18,20 +19,21 @@ void exibirInstrucoes() {
     cout << "Pressione ENTER para voltar ao menu...";
     cin.ignore();
     cin.get();
-    cleanScreen();
+    system("cls");
 }
 
 void exibirRanking() {
-    cleanScreen();
+    system("cls");
     cout << "=== RANKING ===\n";
+    drawnRanking();
     //falta fazer
     cin.ignore();
     cin.get();
-    cleanScreen();
+    system("cls");
 }
 
 void renderMenu() {
-    cleanScreen();
+    system("cls");
     cout << "===== SPACE INVADERS =====\n\n";
     for (int i = 0; i < N_OPCOES; i++) {
         if (i == selectedItem) {
@@ -40,11 +42,10 @@ void renderMenu() {
             cout << "   " << opcoes[i] << "\n";
         }
     }
-    cleanScreen();
 }
 
 int navegarMenu() {
-    cleanScreen();
+    system("cls");
     while (true) {
         renderMenu();
         char tecla = _getch();
@@ -59,7 +60,7 @@ int navegarMenu() {
 }
 
 void menu() {
-    cleanScreen();
+    system("cls");
     while (true) {
         int opcao = navegarMenu();
 

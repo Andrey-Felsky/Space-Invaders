@@ -3,5 +3,6 @@
 
 void cleanScreen();
 void hideCursor();
+void resetColor();
 
 #endif
