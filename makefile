@@ -1,6 +1,6 @@
 # Compilador e flags
 CXX = g++
-CXXFLAGS = -std=c++17 -Wall -static-libgcc -Iinclude -Isrc -I.
+CXXFLAGS = -std=c++17 -Wall -J -static-libgcc -Iinclude -Isrc -I.
 LDFLAGS = -mconsole
 
 # Fontes existentes no projeto
@@ -17,7 +17,7 @@ SRC = \
 OBJ = $(SRC:.cpp=.o)
 
 # Nome do executável final
-TARGET = main.exe
+TARGET = output/main.exe
 
 # Regra principal
 all: $(TARGET)
