@@ -1,38 +1,35 @@
-# Compilador
+# Compilador e flags
 CXX = g++
-CXXFLAGS = -Wall -Wextra -g3
+CXXFLAGS = -std=c++17 -Wall -static-libgcc -Iinclude -Isrc -I.
+LDFLAGS = -mconsole
 
-# Diretórios
-SRC_DIR = .
-OUT_DIR = output
+# Fontes existentes no projeto
+SRC = \
+    main.cpp \
+    src/utils/cleanScreen/cleanScreen.cpp \
+    src/ranking/score.cpp \
+    src/menu/menu.cpp \
+    src/mapa/mapa.cpp \
+    src/logic/logic.cpp \
+    src/enemy/enemy.cpp 
 
-# Arquivo final
-TARGET = $(OUT_DIR)/main.exe
+# Gera nomes dos arquivos .o
+OBJ = $(SRC:.cpp=.o)
 
-# Lista de arquivos fonte
-SRCS = \
-    $(SRC_DIR)/main.cpp \
-    $(SRC_DIR)/enemy/enemy.cpp \
-    $(SRC_DIR)/logic/logic.cpp \
-    $(SRC_DIR)/mapa/mapa.cpp \
-    $(SRC_DIR)/menu/menu.cpp \
-    $(SRC_DIR)/ranking/score.cpp \
-    $(SRC_DIR)/utils/cleanScreen/cleanScreen.cpp \
-    $(SRC_DIR)/utils/gameElements.cpp
+# Nome do executável final
+TARGET = main.exe
 
-# Gera lista de objetos .o para cada fonte .cpp
-OBJS = $(SRCS:.cpp=.o)
-
-# Regra padrão
+# Regra principal
 all: $(TARGET)
 
-# Como gerar o executável
-$(TARGET): $(SRCS)
-	@mkdir -p $(OUT_DIR)
-	$(CXX) $(CXXFLAGS) $(SRCS) -o $(TARGET)
+# Linkagem
+$(TARGET): $(OBJ)
+	$(CXX) $(LDFLAGS) $(OBJ) -o $(TARGET)
 
-# Limpeza dos arquivos compilados
+# Regra para compilar .cpp → .o
+%.o: %.cpp
+	$(CXX) $(CXXFLAGS) -c $< -o $@
+
+# Limpeza (Windows)
 clean:
-	del /Q /F $(OUT_DIR)\*.exe 2> NUL || true
-
-.PHONY: all clean
+	rm -f $(OBJ) $(TARGET)
