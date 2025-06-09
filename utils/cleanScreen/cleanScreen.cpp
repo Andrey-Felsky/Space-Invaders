@@ -1,0 +1,28 @@
+#include <windows.h>
+#include "cleanScreen.h"
+
+void cleanScreen() {
+    HANDLE hConsole = GetStdHandle(STD_OUTPUT_HANDLE);
+    COORD coord = {0, 0};
+    SetConsoleCursorPosition(hConsole, coord);
+}
+void hideCursor() {
+    HANDLE consoleHandle = GetStdHandle(STD_OUTPUT_HANDLE);
+    CONSOLE_CURSOR_INFO info;
+    info.dwSize = 100;
+    info.bVisible = FALSE;
+    SetConsoleCursorInfo(consoleHandle, &info);
+}
+void resetColor() {
+    HANDLE hConsole = GetStdHandle(STD_OUTPUT_HANDLE);
+    SetConsoleTextAttribute(hConsole, 7);
+}
+void ClearConsole() {
+    HANDLE out = GetStdHandle(STD_OUTPUT_HANDLE);
+    CONSOLE_CURSOR_INFO cursorInfo;
+    GetConsoleCursorInfo(out, &cursorInfo);
+    cursorInfo.bVisible = false;
+    SetConsoleCursorInfo(out, &cursorInfo);
+    COORD pos = {0, 0};
+    SetConsoleCursorPosition(out, pos);
+}
