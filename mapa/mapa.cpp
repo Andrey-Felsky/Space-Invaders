@@ -1,7 +1,7 @@
 #include "mapa.h"
-#include <windows.h>
 #include "../utils/gameElements.h"
 #include <iostream>
+#include <windows.h>
 
 using namespace std;
 
@@ -20,15 +20,12 @@ void render() {
     for (int i = 0; i < 5; i++) {
         if (inimigoVivo[i]) {
             mapa[inimigos[i][1]][inimigos[i][0]] = gameIcons.enemy;
-        } 
+        }
     }
 
     // renderiza os tiros
     if (tiroAtivo && tiroY >= 0)
         mapa[tiroY][tiroX] = gameIcons.shoot;
-
-    if (tiroInimigoAtivo && tiroInimigoY <= altura)
-        mapa[tiroInimigoY][tiroInimigoX] = gameIcons.shoot;
 
     // renderiza a nave
     mapa[altura - 1][naveX] = gameIcons.spaceship;

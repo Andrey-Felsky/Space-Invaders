@@ -9,10 +9,7 @@ extern bool inimigoVivo[5];
 extern int inimigos[5][2];
 
 extern bool tiroAtivo;
-extern bool tiroInimigoAtivo;
 extern int tiroX, tiroY;
-extern int tiroInimigoX, tiroInimigoY;
-
 
 extern int naveX;
 
