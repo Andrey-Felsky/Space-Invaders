@@ -1,7 +1,7 @@
 #pragma once
 using namespace std;
-#include <string>
 #include <windows.h>
+#include <string>
 
 struct GameElements {
     //Simbolos

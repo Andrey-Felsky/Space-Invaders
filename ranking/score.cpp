@@ -6,6 +6,7 @@
 #include <ctime>
 #include <iomanip>
 #include <algorithm>
+
 using namespace std;
 
 const int MAX_RANKING = 100; // limite de registros
