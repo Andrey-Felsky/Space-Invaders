@@ -1,5 +1,5 @@
 #include "enemy.h"
-
+#include <windows.h>
 
 int dirInimigo = 1;
 
@@ -15,7 +15,6 @@ void moveEnemies() {
     for (int i = 0; i < 5; i++) {
         inimigos[i][0] += dirInimigo;
     }
-
     // inverter direção se algum bater na borda
     for (int i = 0; i < 5; i++) {
         if (inimigoVivo[i] && (inimigos[i][0] <= 0 || inimigos[i][0] >= 29)) {

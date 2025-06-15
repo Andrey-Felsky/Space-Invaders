@@ -39,6 +39,9 @@ bool gameOver = false;
 bool tiroInimigoAtivo = false;
 int tiroInimigoX = 0, tiroInimigoY = 0;
 
+int contadorMovimento = 0;
+int intervaloTempo = 15; 
+
 void input() {
     if (_kbhit()) {
         char tecla = _getch();
@@ -81,10 +84,15 @@ void game(){
         updateTire(); // atualiza os tiros
         updateTiroInimigo(); // atualiza os tiros do inimigo
         checkCollisions(); // checa as colisões 
-        moveEnemies(); // logica para movimentaçao dos inimigos
+
+        contadorMovimento++;
+        if (contadorMovimento >= intervaloTempo) {
+            moveEnemies();
+            contadorMovimento = 0;
+        }
+
         checkEndOfGame(); // funcao que checa se chegou no final do jogo
 
-        Sleep(30); 
         // usar essa variavel para icrementar a dificuldade 
         //ex: quanto maior o numero dentro do Sleep() mais divagar fica o jogo
     }
