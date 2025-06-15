@@ -20,10 +20,7 @@ void saveScore(const string& nome, int score, float tempo) {
     char buffer[11];
     strftime(buffer, sizeof(buffer), "%d/%m/%Y", now);
 
-    // define resultado
-    string resultado = (score >= 50) ? "VITÓRIA" : "DERROTA";
-
-    arq << nome << "," << score << "," << buffer << "," << tempo << "," << resultado << "\n";
+    arq << nome << "," << score << "," << buffer << "," << tempo << "\n";
     arq.close();
 }
 
@@ -40,18 +37,16 @@ void drawnRanking() {
 
     while (getline(arq, linha) && total < MAX_RANKING) {
         stringstream ss(linha);
-        string nome, sscore, data, stempo, resultado;;
+        string nome, sscore, data, stempo;
         getline(ss, nome, ',');
         getline(ss, sscore, ',');
         getline(ss, data, ',');
         getline(ss, stempo, ',');
-        getline(ss, resultado, ','); 
 
         registros[total].nome = nome;
         registros[total].score = stoi(sscore);
         registros[total].data = data;
         registros[total].tempo = stof(stempo);
-        registros[total].resultado = resultado;
         total++;
     }
     arq.close();
@@ -63,21 +58,18 @@ void drawnRanking() {
                 PlayerRegistrationAndScore temp = registros[j];
                 registros[j] = registros[j + 1];
                 registros[j + 1] = temp;
-                registros[i].resultado;
             }
         }
     }
 
     // imprime
     system("cls");
-    cout << "\n====================== RANKING ======================\n";
-    cout << left << setw(12) << "Nome" << setw(10) << "Score" << setw(12) << "Data" << setw(8) << "Tempo" << "Resultado\n";
+    cout << "\n=============== RANKING ===============\n";
+    cout << left << setw(12) << "Nome" << setw(10) << "Score" << setw(12) << "Data" << "Tempo\n";
     for (int i = 0; i < total && i < 10; i++) {
-       cout << setw(12) << registros[i].nome
-            << setw(10) << registros[i].score
-            << setw(12) << registros[i].data
-            << fixed << setprecision(2) << setw(8) << registros[i].tempo
-            << " " << registros[i].resultado << "\n";
-             
+        cout << setw(12) << registros[i].nome
+             << setw(10) << registros[i].score
+             << setw(12) << registros[i].data
+             << fixed << setprecision(2) << registros[i].tempo << "s\n";
     }
 }
