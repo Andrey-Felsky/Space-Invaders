@@ -15,6 +15,8 @@ extern int tiroInimigoX, tiroInimigoY;
 extern const int largura;
 extern const int altura;
 
+// Include gameElements.h to access MAX_ENEMIES
+#include "../utils/gameElements.h" 
 
 void updateTire();
 void checkCollisions();

@@ -3,6 +3,9 @@ using namespace std;
 #include <string>
 #include <windows.h>
 
+// New constant for maximum enemies
+const int MAX_ENEMIES = 8; // Increased from 5 to 8
+
 struct GameElements {
     //Simbolos
     char spaceship = 'A';  

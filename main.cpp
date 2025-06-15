@@ -11,6 +11,7 @@
 #include "menu/menu.h"
 #include "ranking/score.h"
 #include "utils/cleanScreen/cleanScreen.h"
+#include "utils/gameElements.h" // Include to access MAX_ENEMIES
 
 using namespace std;
 using namespace std::chrono;
@@ -27,8 +28,8 @@ char mapa[altura][largura];
 
 int naveX = largura / 2;
 
-bool inimigoVivo[5];
-int inimigos[5][2];
+bool inimigoVivo[MAX_ENEMIES]; // Changed to MAX_ENEMIES
+int inimigos[MAX_ENEMIES][2]; // Changed to MAX_ENEMIES
 
 bool tiroAtivo = false;
 int tiroX = 0, tiroY = 0;
@@ -84,7 +85,7 @@ void game(){
         moveEnemies(); // logica para movimentaçao dos inimigos
         checkEndOfGame(); // funcao que checa se chegou no final do jogo
 
-        Sleep(30); 
+        Sleep(50); // Increased from 30 to 50 for slower enemy movement
         // usar essa variavel para icrementar a dificuldade 
         //ex: quanto maior o numero dentro do Sleep() mais divagar fica o jogo
     }

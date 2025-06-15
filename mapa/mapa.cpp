@@ -1,5 +1,5 @@
 #include "mapa.h"
-#include "../utils/gameElements.h"
+#include "../utils/gameElements.h" // Ensure this path is correct
 #include <iostream>
 #include <windows.h>
 
@@ -20,7 +20,7 @@ void render()
     }
 
     // renderiza os inimigos
-    for (int i = 0; i < 5; i++)
+    for (int i = 0; i < MAX_ENEMIES; i++) // Changed from 5 to MAX_ENEMIES
     {
         if (inimigoVivo[i])
         {

@@ -1,7 +1,7 @@
 #include "logic.h"
 #include "../enemy/enemy.h" 
 #include <iostream>
-
+#include <cstdlib> // For rand()
 
 void updateTire() {
     if (tiroAtivo) {
@@ -13,7 +13,7 @@ void updateTire() {
 }
 
 void checkCollisions() {
-    for (int i = 0; i < 5; i++) {
+    for (int i = 0; i < MAX_ENEMIES; i++) { // Changed from 5 to MAX_ENEMIES
         if (inimigoVivo[i] && tiroAtivo &&
             tiroX == inimigos[i][0] && tiroY == inimigos[i][1]) {
             inimigoVivo[i] = false;
@@ -25,16 +25,17 @@ void checkCollisions() {
 
 void checkEndOfGame() {
     // derrota se algum inimigo chegou na linha da nave
-    for (int i = 0; i < 5; i++) {
-        if (inimigoVivo[i] && inimigos[i][1] >= 19) {
+    for (int i = 0; i < MAX_ENEMIES; i++) { // Changed from 5 to MAX_ENEMIES
+        if (inimigoVivo[i] && inimigos[i][1] >= altura - 1) { // Changed to altura - 1 for consistency
             gameOver = true;
             //std::cout << "Você perdeu! Inimigos invadiram a base.\n";
+            return; // Exit early if game is over
         }
     }
 
     // vitória se todos mortos
     bool venceu = true;
-    for (int i = 0; i < 5; i++) {
+    for (int i = 0; i < MAX_ENEMIES; i++) { // Changed from 5 to MAX_ENEMIES
         if (inimigoVivo[i]) {
             venceu = false;
             break;
@@ -50,10 +51,10 @@ void checkEndOfGame() {
 void updateTiroInimigo() {
     if (!tiroInimigoAtivo) {
         // Cria lista com índices de inimigos vivos
-        int vivos[5];
+        int vivos[MAX_ENEMIES]; // Changed to MAX_ENEMIES
         int totalVivos = 0;
 
-        for (int i = 0; i < 5; i++) {
+        for (int i = 0; i < MAX_ENEMIES; i++) { // Changed from 5 to MAX_ENEMIES
             if (inimigoVivo[i]) {
                 vivos[totalVivos++] = i;
             }
@@ -69,7 +70,7 @@ void updateTiroInimigo() {
         }
     } else {
         tiroInimigoY++;
-        if (tiroInimigoY >= altura - 1) {
+        if (tiroInimigoY >= altura - 1) { // Adjusted boundary check
             tiroInimigoAtivo = false;
         }
         if (tiroInimigoY == altura - 1 && tiroInimigoX == naveX) {
