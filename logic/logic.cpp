@@ -46,3 +46,34 @@ void checkEndOfGame() {
         std::cout << "Parabéns, você venceu!\n";
     }
 }
+
+void updateTiroInimigo() {
+    if (!tiroInimigoAtivo) {
+        // Cria lista com índices de inimigos vivos
+        int vivos[5];
+        int totalVivos = 0;
+
+        for (int i = 0; i < 5; i++) {
+            if (inimigoVivo[i]) {
+                vivos[totalVivos++] = i;
+            }
+        }
+
+        if (totalVivos > 0) {
+            int index = rand() % totalVivos;
+            int escolhido = vivos[index];
+
+            tiroInimigoX = inimigos[escolhido][0];
+            tiroInimigoY = inimigos[escolhido][1] + 1;
+            tiroInimigoAtivo = true;
+        }
+    } else {
+        tiroInimigoY++;
+        if (tiroInimigoY >= altura - 1) {
+            tiroInimigoAtivo = false;
+        }
+        if (tiroInimigoY == altura - 1 && tiroInimigoX == naveX) {
+            gameOver = true;
+        }
+    }
+}

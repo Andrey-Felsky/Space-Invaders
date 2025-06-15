@@ -2,6 +2,8 @@
 #include <windows.h>
 #include <conio.h>
 #include <chrono>
+#include <cstdlib>
+#include <ctime> 
 
 #include "mapa/mapa.h"
 #include "enemy/enemy.h"
@@ -33,6 +35,9 @@ int tiroX = 0, tiroY = 0;
 
 int score = 0;
 bool gameOver = false;
+
+bool tiroInimigoAtivo = false;
+int tiroInimigoX = 0, tiroInimigoY = 0;
 
 void input() {
     if (_kbhit()) {
@@ -74,6 +79,7 @@ void game(){
         render(); //renderiza o mapa, enimigos e tiros
         input(); // recebe os dados do player
         updateTire(); // atualiza os tiros
+        updateTiroInimigo(); // atualiza os tiros do inimigo
         checkCollisions(); // checa as colisões 
         moveEnemies(); // logica para movimentaçao dos inimigos
         checkEndOfGame(); // funcao que checa se chegou no final do jogo
@@ -102,6 +108,7 @@ void game(){
 int main() {
     system("cls");
     hideCursor();
+    srand(time(NULL));
 
     while (true) {
         menu();         

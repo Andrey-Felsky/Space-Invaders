@@ -11,6 +11,9 @@ extern int inimigos[5][2];
 extern bool tiroAtivo;
 extern int tiroX, tiroY;
 
+extern bool tiroInimigoAtivo;
+extern int tiroInimigoX, tiroInimigoY;
+
 extern int naveX;
 
 void render();
