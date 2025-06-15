@@ -1,10 +1,9 @@
 #include <iostream>
-#include <windows.h> // Para Sleep()
+#include <windows.h>
 #include <conio.h>
 #include <chrono>
 #include <cstdlib>
-#include <ctime>
-// #include <thread> // REMOVA ESTA LINHA
+#include <ctime> 
 
 #include "mapa/mapa.h"
 #include "enemy/enemy.h"
@@ -12,128 +11,101 @@
 #include "menu/menu.h"
 #include "ranking/score.h"
 #include "utils/cleanScreen/cleanScreen.h"
-#include "utils/gameElements.h"
 
 using namespace std;
 using namespace std::chrono;
 
-//COMANDO PARA COMPILAR:
-//g++ main.cpp mapa/mapa.cpp enemy/enemy.cpp logic/logic.cpp menu/menu.cpp ranking/score.cpp utils/cleanScreen/cleanScreen.cpp -o output/main.exe -std=c++17
-// OU APENAS:
+//COMANDO PARA COMPILAR: 
 //g++ main.cpp mapa/mapa.cpp enemy/enemy.cpp logic/logic.cpp menu/menu.cpp ranking/score.cpp utils/cleanScreen/cleanScreen.cpp -o output/main.exe
+
+//ATENCAO:
+// criar um arquivo novo ou pasta incluir no comando
 
 const int largura = 30;
 const int altura = 20;
 char mapa[altura][largura];
 
-float naveX = largura / 2.0f;
+int naveX = largura / 2;
 
-float inimigos[MAX_ENEMIES][2];
-bool inimigoVivo[MAX_ENEMIES];
+bool inimigoVivo[5];
+int inimigos[5][2];
 
 bool tiroAtivo = false;
-float tiroX = 0.0f, tiroY = 0.0f;
+int tiroX = 0, tiroY = 0;
 
 int score = 0;
 bool gameOver = false;
 
 bool tiroInimigoAtivo = false;
-float tiroInimigoX = 0.0f, tiroInimigoY = 0.0f;
-
-float deltaTime = 0.0f;
-
-float playerMoveDirection = 0.0f;
+int tiroInimigoX = 0, tiroInimigoY = 0;
 
 int contadorMovimento = 0;
 int intervaloTempo = 15; 
 
 void input() {
-    while (_kbhit()) {
+    if (_kbhit()) {
         char tecla = _getch();
         if (tecla == 'a' || tecla == 'A') {
-            playerMoveDirection = -1.0f;
+            if (naveX > 0) naveX--;
         }
         else if (tecla == 'd' || tecla == 'D') {
-            playerMoveDirection = 1.0f;
+            if (naveX < largura - 1) naveX++;
         }
         else if (tecla == ' ') {
             if (!tiroAtivo) {
                 tiroAtivo = true;
                 tiroX = naveX;
-                tiroY = altura - 2.0f;
+                tiroY = altura - 2;
             }
         }
     }
 }
 
-void updatePlayerPosition() {
-    if (playerMoveDirection != 0.0f) {
-        naveX += playerMoveDirection * PLAYER_SPEED * deltaTime;
-
-        if (naveX < 0.0f) naveX = 0.0f;
-        if (naveX > largura - 1.0f) naveX = largura - 1.0f;
-
-        playerMoveDirection = 0.0f;
-    }
-}
-
-
 void game(){
+    // zera estado do jogo
     gameOver = false;
     tiroAtivo = false;
     score = 0;
-    naveX = largura / 2.0f;
-    initEnemy();
+    naveX = largura / 2;
+    initEnemy(); // inicializa os inimigos
 
     system("cls");
     string nome;
     cout << "Digite seu nome: ";
     cin >> nome;
 
-    auto lastFrameTime = high_resolution_clock::now();
-    auto inicio = high_resolution_clock::now(); // Definir 'inicio' aqui
+    auto inicio = high_resolution_clock::now();
 
-    // Objetivo de FPS
-    const int targetFPS = 60; // Por exemplo, 60 quadros por segundo
-    // Duração de cada frame em milissegundos
-    const int targetFrameDurationMs = 1000 / targetFPS; 
-
+    // loop principal do jogo
     while (!gameOver) {
-        auto currentFrameTime = high_resolution_clock::now();
-        duration<float> frameDuration = currentFrameTime - lastFrameTime;
-        deltaTime = frameDuration.count(); // Tempo em segundos
-        lastFrameTime = currentFrameTime;
 
-        if (deltaTime == 0.0f) deltaTime = 0.0001f;
+        auto agora = high_resolution_clock::now();
+        duration<float> duracao = agora - inicio;
+        float tempoDecorrido = duracao.count();
 
-        cleanScreen();
-        
-        input();
-        updatePlayerPosition();
-        updateTire();
-        updateTiroInimigo();
-        checkCollisions();
-        moveEnemies();
-        checkEndOfGame();
+        cleanScreen(); //limpa a tela
+        render(score, tempoDecorrido); //renderiza o mapa, enimigos e tiros
+        input(); // recebe os dados do player
+        updateTire(); // atualiza os tiros
+        updateTiroInimigo(); // atualiza os tiros do inimigo
+        checkCollisions(); // checa as colisões 
 
-        render();
-
-        // Limita o FPS usando Sleep()
-        auto endFrameTime = high_resolution_clock::now();
-        duration<float, milli> elapsedMs = endFrameTime - currentFrameTime; // Tempo decorrido em milissegundos
-
-        // Calcula quanto tempo ainda precisamos dormir
-        int sleepTimeMs = targetFrameDurationMs - static_cast<int>(elapsedMs.count());
-        
-        if (sleepTimeMs > 0) {
-            Sleep(sleepTimeMs);
+        contadorMovimento++;
+        if (contadorMovimento >= intervaloTempo) {
+            moveEnemies();
+            contadorMovimento = 0;
         }
+
+        checkEndOfGame(); // funcao que checa se chegou no final do jogo
+
+        // usar essa variavel para icrementar a dificuldade 
+        //ex: quanto maior o numero dentro do Sleep() mais divagar fica o jogo
     }
     system("cls");
     auto fim = high_resolution_clock::now();
     duration<float> duracao = fim - inicio;
 
-    resetColor();
+    resetColor(); //necessario para o menu nao mudar de cor
     cout << "\nScore final: " << score << endl;
 
     saveScore(nome, score, duracao.count());
@@ -151,8 +123,8 @@ int main() {
     srand(time(NULL));
 
     while (true) {
-        menu();
-        game();
+        menu();         
+        game();  
     }
 
     return 0;
