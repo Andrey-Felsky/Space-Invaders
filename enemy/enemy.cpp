@@ -1,34 +1,76 @@
 #include "enemy.h"
-#include "../mapa/mapa.h" // Adicione esta linha
-#include "../utils/gameElements.h" // Ensure this path is correct
+#include "../mapa/mapa.h"
+#include "../utils/gameElements.h"
+#include <cmath>
+
+extern float deltaTime; // Acessa o deltaTime global
 
 int dirInimigo = 1;
 
+// Inicializa o timer de descida
+float enemyDescendTimer = 0.0f;
+// Define o intervalo de tempo para os inimigos descerem uma linha (em segundos)
+// Por exemplo, 2.0f significa que eles descem a cada 2 segundos.
+const float ENEMY_DESCEND_INTERVAL = 1.0f; // Ajuste este valor (menor = mais frequente)
+
+
 void initEnemy() {
-    // Initial positioning for MAX_ENEMIES enemies
-    // Adjust this logic if you want different enemy layouts
+    const int enemiesPerLogicalRow = 10;
+    const float startXOffset = 2.0f;
+    const float startYOffset = 2.0f;
+    const float rowSpacing = 2.0f;
+
     for (int i = 0; i < MAX_ENEMIES; i++) {
-        inimigos[i][0] = 2 + (i % (largura - 4)) * (largura / (MAX_ENEMIES > (largura-4) ? (largura-4) : MAX_ENEMIES)); // Distribute X evenly, avoiding edges
-        inimigos[i][1] = 2 + (i / (largura - 4)); // Start enemies on different rows if MAX_ENEMIES > (largura-4)
-        if (inimigos[i][0] >= largura - 1) inimigos[i][0] = largura - 2; // Prevent going out of bounds
-        if (inimigos[i][0] <= 0) inimigos[i][0] = 1; // Prevent going out of bounds
+        int col = i % enemiesPerLogicalRow;
+        int row = i / enemiesPerLogicalRow;
+
+        inimigos[i][0] = startXOffset + col * ((largura - startXOffset * 2) / (float)enemiesPerLogicalRow);
+        inimigos[i][1] = startYOffset + row * rowSpacing;
+
+        if (inimigos[i][0] >= largura - 1) inimigos[i][0] = largura - 1.01f;
+        if (inimigos[i][0] <= 0) inimigos[i][0] = 0.01f;
+
         inimigoVivo[i] = true;
     }
+    enemyDescendTimer = 0.0f; // Reinicia o timer ao iniciar o jogo
 }
 
 void moveEnemies() {
-    for (int i = 0; i < MAX_ENEMIES; i++) { // Changed from 5 to MAX_ENEMIES
-        inimigos[i][0] += dirInimigo;
+    bool hitEdge = false;
+    float moveDistance = ENEMY_SPEED_X * deltaTime;
+
+    for (int i = 0; i < MAX_ENEMIES; i++) {
+        if (inimigoVivo[i]) {
+            inimigos[i][0] += dirInimigo * moveDistance;
+
+            if (inimigos[i][0] <= 0.0f || inimigos[i][0] >= largura - 1.0f) {
+                hitEdge = true;
+            }
+        }
     }
 
-    // inverter direção se algum bater na borda
-    for (int i = 0; i < MAX_ENEMIES; i++) { // Changed from 5 to MAX_ENEMIES
-        if (inimigoVivo[i] && (inimigos[i][0] <= 0 || inimigos[i][0] >= largura - 1)) { // Adjusted boundary check
-            dirInimigo *= -1;
-            for (int j = 0; j < MAX_ENEMIES; j++) { // Changed from 5 to MAX_ENEMIES
-                inimigos[j][1]++; // desce todos
+    if (hitEdge) {
+        dirInimigo *= -1; // Inverte a direção de todos
+        // A descida AGORA É GERENCIADA PELO TIMER abaixo, não mais aqui diretamente.
+        // Se você quiser que eles desçam imediatamente ao bater na parede *além* do timer,
+        // pode adicionar um pequeno incremento aqui:
+        // float immediateDescend = 0.5f; // Desce 0.5 unidades imediatamente
+        // for (int i = 0; i < MAX_ENEMIES; i++) {
+        //     if (inimigoVivo[i]) {
+        //         inimigos[i][1] += immediateDescend;
+        //     }
+        // }
+    }
+
+    // Lógica de descida baseada em tempo
+    enemyDescendTimer += deltaTime;
+    if (enemyDescendTimer >= ENEMY_DESCEND_INTERVAL) {
+        float descendDistance = 1.0f; // Desce 1 unidade completa
+        for (int i = 0; i < MAX_ENEMIES; i++) {
+            if (inimigoVivo[i]) {
+                inimigos[i][1] += descendDistance;
             }
-            break; // Break after first collision to prevent multiple direction changes in one frame
         }
+        enemyDescendTimer -= ENEMY_DESCEND_INTERVAL; // Reseta o timer (subtrai para manter o excesso de tempo)
     }
 }

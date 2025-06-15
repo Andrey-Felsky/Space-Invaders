@@ -3,15 +3,21 @@ using namespace std;
 #include <string>
 #include <windows.h>
 
-// New constant for maximum enemies
-const int MAX_ENEMIES = 8; // Increased from 5 to 8
+const int MAX_ENEMIES = 20; // Manter o MAX_ENEMIES para 2 fileiras
+
+// Novas constantes para velocidade (unidades por segundo)
+const float PLAYER_SPEED = 15.0f; // Ex: 15 células por segundo
+const float ENEMY_SPEED_X = 5.0f; // Ex: 5 células por segundo horizontalmente
+const float ENEMY_SPEED_Y = 1.0f; // Ex: 1 célula por segundo para descer
+const float PLAYER_SHOT_SPEED = 25.0f; // Ex: 25 células por segundo
+const float ENEMY_SHOT_SPEED = 10.0f; // Ex: 10 células por segundo
 
 struct GameElements {
     //Simbolos
-    char spaceship = 'A';  
-    char wall = char(219);   
-    char path = ' '; 
-    char enemy = 'W'; 
+    char spaceship = 'A';
+    char wall = char(219);
+    char path = ' ';
+    char enemy = 'W';
     char shoot = '|';
 
     // Cores
