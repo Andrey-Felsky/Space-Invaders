@@ -44,6 +44,9 @@ float deltaTime = 0.0f;
 
 float playerMoveDirection = 0.0f;
 
+int contadorMovimento = 0;
+int intervaloTempo = 15; 
+
 void input() {
     while (_kbhit()) {
         char tecla = _getch();
