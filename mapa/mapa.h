@@ -17,6 +17,8 @@ extern bool tiroInimigoAtivo;
 extern float tiroInimigoX, tiroInimigoY; // Alterado para float
 
 extern float naveX; // Alterado para float
+extern int score; // Adicionado para acessar o score no render()
+extern float tempoDecorrido; // Adicionado para acessar o tempo no render()
 
 void render();
 

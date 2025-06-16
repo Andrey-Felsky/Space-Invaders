@@ -5,6 +5,7 @@
 #include <cmath> // Para roundf
 #include <string> // Para construir a string do frame
 #include <sstream> // Para construir a string do frame
+#include <iomanip> // Para setprecision
 
 using namespace std;
 
@@ -36,66 +37,108 @@ void render()
     {
         if (inimigoVivo[i])
         {
-            int enemyDrawX = roundf(inimigos[i][0]);
-            int enemyDrawY = roundf(inimigos[i][1]);
+            // Arredonda as posições float para int para desenhar no mapa de caracteres
+            int inimigoX_int = static_cast<int>(roundf(inimigos[i][0]));
+            int inimigoY_int = static_cast<int>(roundf(inimigos[i][1]));
 
-            if (enemyDrawX >= 0 && enemyDrawX < largura &&
-                enemyDrawY >= 0 && enemyDrawY < altura) {
-                mapa[enemyDrawY][enemyDrawX] = gameIcons.enemy;
+            // Garante que o inimigo esteja dentro dos limites do mapa antes de desenhar
+            if (inimigoX_int >= 0 && inimigoX_int < largura &&
+                inimigoY_int >= 0 && inimigoY_int < altura)
+            {
+                mapa[inimigoY_int][inimigoX_int] = gameIcons.enemy;
             }
         }
     }
 
-    // renderiza o tiro do jogador
-    if (tiroAtivo) {
-        int shootDrawX = roundf(tiroX);
-        int shootDrawY = roundf(tiroY);
-        if (shootDrawY >= 0 && shootDrawY < altura &&
-            shootDrawX >= 0 && shootDrawX < largura) {
-            mapa[shootDrawY][shootDrawX] = gameIcons.shoot;
+    // Renderiza o tiro do jogador
+    if (tiroAtivo)
+    {
+        int tiroX_int = static_cast<int>(roundf(tiroX));
+        int tiroY_int = static_cast<int>(roundf(tiroY));
+        if (tiroX_int >= 0 && tiroX_int < largura &&
+            tiroY_int >= 0 && tiroY_int < altura)
+        {
+            mapa[tiroY_int][tiroX_int] = gameIcons.shoot;
         }
     }
 
-    // renderiza o tiro do inimigo
-    if (tiroInimigoAtivo) {
-        int enemyShootDrawX = roundf(tiroInimigoX);
-        int enemyShootDrawY = roundf(tiroInimigoY);
-        if (enemyShootDrawY >= 0 && enemyShootDrawY < altura &&
-            enemyShootDrawX >= 0 && enemyShootDrawX < largura) {
-            mapa[enemyShootDrawY][enemyShootDrawX] = '|'; // símbolo diferente do player
+    // Renderiza o tiro do inimigo
+    if (tiroInimigoAtivo)
+    {
+        int tiroInimigoX_int = static_cast<int>(roundf(tiroInimigoX));
+        int tiroInimigoY_int = static_cast<int>(roundf(tiroInimigoY));
+        if (tiroInimigoX_int >= 0 && tiroInimigoX_int < largura &&
+            tiroInimigoY_int >= 0 && tiroInimigoY_int < altura)
+        {
+            mapa[tiroInimigoY_int][tiroInimigoX_int] = '|'; // Usar o mesmo símbolo do jogador, ou outro se quiser diferenciar
         }
     }
 
-    // renderiza a nave
-    int naveDrawX = roundf(naveX);
-    if (naveDrawX >= 0 && naveDrawX < largura) {
-        mapa[altura - 1][naveDrawX] = gameIcons.spaceship;
+
+    // Renderiza a nave do jogador
+    int naveX_int = static_cast<int>(roundf(naveX));
+    if (naveX_int >= 0 && naveX_int < largura)
+    {
+        mapa[altura - 1][naveX_int] = gameIcons.spaceship;
     }
 
-    // --- Construção do Frame para Impressão Única ---
+
+    // Cria um stringstream para construir o frame completo
     stringstream frameBuffer;
-    
-    // Renderiza o topo do mapa
-    SetConsoleTextAttribute(hConsole, gameIcons.wallColor); // Cor da parede
-    frameBuffer << gameIcons.wall;
-    for (int x = 0; x < largura; x++)
-        frameBuffer << gameIcons.wall;
-    frameBuffer << gameIcons.wall << "\n";
-    SetConsoleTextAttribute(hConsole, gameIcons.pathColor); // Volta para cor do caminho
 
-    // Renderiza o mapa com as bordas laterais e cores dos elementos
+    // *** MODIFICAÇÃO AQUI: INÍCIO DA BORDAR SUPERIOR DO HUD ***
+    SetConsoleTextAttribute(hConsole, gameIcons.wallColor); // Cor da parede
+    frameBuffer << gameIcons.wall; // Parede esquerda
+    for (int i = 0; i < largura; ++i) {
+        frameBuffer << gameIcons.wall;
+    }
+    frameBuffer << gameIcons.wall << "\n"; // Parede direita e quebra de linha
+    // ************************************************************
+
+    // Renderiza o cabeçalho do HUD
+    SetConsoleTextAttribute(hConsole, gameIcons.wallColor); // Cor da parede para a borda
+    frameBuffer << gameIcons.wall; // Parede esquerda do HUD
+    SetConsoleTextAttribute(hConsole, gameIcons.pathColor); // Cor padrão para o texto do HUD
+    // Espaçamento para centralizar/ajustar o HUD
+    frameBuffer << "SCORE: " << score << "   TIME: " << fixed << setprecision(1) << tempoDecorrido << "s";
+    // Preencher o restante da linha do HUD com espaços para manter o alinhamento da borda
+    int hudTextLength = string("SCORE: ").length() + to_string(score).length() +
+                        string("   TIME: ").length() + to_string(static_cast<int>(tempoDecorrido)).length() + 1; // +1 para 's'
+    
+    // Ajuste aqui para considerar a largura total desejada do HUD, que é largura do mapa.
+    // O texto do HUD tem um tamanho variável, então preenchemos o espaço restante.
+    // Contagem aproximada do texto para preencher corretamente.
+    // Lembre-se que 'largura' é a largura interna do mapa. As bordas adicionam 2.
+    // Ajuste o padding conforme necessário para o layout exato.
+    // Este cálculo é uma estimativa e pode precisar de ajuste fino.
+    int remainingSpace = largura - hudTextLength;
+    if (remainingSpace > 0) {
+        for (int i = 0; i < remainingSpace; ++i) {
+            frameBuffer << ' ';
+        }
+    }
+    
+    SetConsoleTextAttribute(hConsole, gameIcons.wallColor); // Cor da parede
+    frameBuffer << gameIcons.wall << "\n"; // Parede direita do HUD e quebra de linha
+
+    // Linha separadora do HUD (mesmo caractere da borda)
+    SetConsoleTextAttribute(hConsole, gameIcons.wallColor); // Cor da parede
+    frameBuffer << gameIcons.wall; // Parede esquerda
+    for (int i = 0; i < largura; ++i) {
+        frameBuffer << gameIcons.wall;
+    }
+    frameBuffer << gameIcons.wall << "\n"; // Parede direita e quebra de linha
+    // *******************************************************************
+
+
+    // Renderiza as bordas laterais e o conteúdo do mapa
     for (int y = 0; y < altura; y++)
     {
         SetConsoleTextAttribute(hConsole, gameIcons.wallColor); // Cor da parede
         frameBuffer << gameIcons.wall;
-        SetConsoleTextAttribute(hConsole, gameIcons.pathColor); // Volta para cor do caminho
-
         for (int x = 0; x < largura; x++)
         {
             char c = mapa[y][x];
-
-            // Define cor com base no caractere, sem adicionar ao stringstream
-            // A cor será aplicada ao caractere individualmente
             if (c == gameIcons.enemy)
             {
                 SetConsoleTextAttribute(hConsole, gameIcons.enemyColor);
@@ -134,6 +177,5 @@ void render()
     // Garante que a cor padrão volte após o frame
     SetConsoleTextAttribute(hConsole, gameIcons.pathColor);
 
-    // Escreve todo o buffer de uma vez
     cout << frameBuffer.str();
 }

@@ -41,11 +41,12 @@ bool tiroInimigoAtivo = false;
 float tiroInimigoX = 0.0f, tiroInimigoY = 0.0f;
 
 float deltaTime = 0.0f;
+float tempoDecorrido = 0.0f; // Variável global para o tempo decorrido
 
 float playerMoveDirection = 0.0f;
 
 int contadorMovimento = 0;
-int intervaloTempo = 15; 
+int intervaloTempo = 15;
 
 void input() {
     while (_kbhit()) {
@@ -83,6 +84,7 @@ void game(){
     tiroAtivo = false;
     score = 0;
     naveX = largura / 2.0f;
+    tempoDecorrido = 0.0f; // Resetar o tempo no início de cada jogo
     initEnemy();
 
     system("cls");
@@ -96,7 +98,7 @@ void game(){
     // Objetivo de FPS
     const int targetFPS = 60; // Por exemplo, 60 quadros por segundo
     // Duração de cada frame em milissegundos
-    const int targetFrameDurationMs = 1000 / targetFPS; 
+    const int targetFrameDurationMs = 1000 / targetFPS;
 
     while (!gameOver) {
         auto currentFrameTime = high_resolution_clock::now();
@@ -106,8 +108,10 @@ void game(){
 
         if (deltaTime == 0.0f) deltaTime = 0.0001f;
 
+        tempoDecorrido += deltaTime; // Atualiza o tempo decorrido a cada frame
+
         cleanScreen();
-        
+
         input();
         updatePlayerPosition();
         updateTire();
@@ -124,7 +128,7 @@ void game(){
 
         // Calcula quanto tempo ainda precisamos dormir
         int sleepTimeMs = targetFrameDurationMs - static_cast<int>(elapsedMs.count());
-        
+
         if (sleepTimeMs > 0) {
             Sleep(sleepTimeMs);
         }
