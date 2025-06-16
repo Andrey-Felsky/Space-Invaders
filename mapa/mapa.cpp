@@ -1,25 +1,18 @@
+#define _WIN32_WINNT 0x0600 // **ADICIONE ESTA LINHA AQUI se não estiver no topo!**
+
 #include "mapa.h"
 #include "../utils/gameElements.h"
 #include <iostream>
-#include <windows.h>
-#include <cmath> // Para roundf
-#include <string> // Para construir a string do frame
-#include <sstream> // Para construir a string do frame
-#include <iomanip> // Para setprecision
+#include <windows.h> // Mantenha este include, mas não usaremos SetConsoleTextAttribute
+#include <cmath>     // Para roundf
+#include <string>    // Para construir a string do frame
+#include <sstream>   // Para construir a string do frame
+#include <iomanip>   // Para setprecision
 
 using namespace std;
 
 GameElements gameIcons;
-HANDLE hConsole = GetStdHandle(STD_OUTPUT_HANDLE);
-
-// Cores ANSI para terminais modernos (opcional, mas mais limpo se suportado)
-// #define ANSI_COLOR_RED     "\x1b[31m"
-// #define ANSI_COLOR_GREEN   "\x1b[32m"
-// #define ANSI_COLOR_YELLOW  "\x1b[33m"
-// #define ANSI_COLOR_BLUE    "\x1b[34m"
-// #define ANSI_COLOR_MAGENTA "\x1b[35m"
-// #define ANSI_COLOR_CYAN    "\x1b[36m"
-// #define ANSI_COLOR_RESET   "\x1b[0m"
+// HANDLE hConsole = GetStdHandle(STD_OUTPUT_HANDLE); // Não é mais necessário para SetConsoleTextAttribute
 
 void render()
 {
@@ -70,10 +63,9 @@ void render()
         if (tiroInimigoX_int >= 0 && tiroInimigoX_int < largura &&
             tiroInimigoY_int >= 0 && tiroInimigoY_int < altura)
         {
-            mapa[tiroInimigoY_int][tiroInimigoX_int] = '|'; // Usar o mesmo símbolo do jogador, ou outro se quiser diferenciar
+            mapa[tiroInimigoY_int][tiroInimigoX_int] = '|'; // Usar '|' para o tiro inimigo, diferenciar para colorir
         }
     }
-
 
     // Renderiza a nave do jogador
     int naveX_int = static_cast<int>(roundf(naveX));
@@ -82,100 +74,89 @@ void render()
         mapa[altura - 1][naveX_int] = gameIcons.spaceship;
     }
 
-
     // Cria um stringstream para construir o frame completo
     stringstream frameBuffer;
 
-    // *** MODIFICAÇÃO AQUI: INÍCIO DA BORDAR SUPERIOR DO HUD ***
-    SetConsoleTextAttribute(hConsole, gameIcons.wallColor); // Cor da parede
-    frameBuffer << gameIcons.wall; // Parede esquerda
+    // Borda superior do HUD
+    frameBuffer << gameIcons.ANSI_BRIGHT_BLUE << gameIcons.wall; // Cor da parede
     for (int i = 0; i < largura; ++i) {
-        frameBuffer << gameIcons.wall;
+        frameBuffer << gameIcons.wall; // A cor já está definida pela linha acima
     }
-    frameBuffer << gameIcons.wall << "\n"; // Parede direita e quebra de linha
-    // ************************************************************
+    frameBuffer << gameIcons.wall << gameIcons.ANSI_RESET << "\n"; // Parede direita e reset de cor
 
     // Renderiza o cabeçalho do HUD
-    SetConsoleTextAttribute(hConsole, gameIcons.wallColor); // Cor da parede para a borda
-    frameBuffer << gameIcons.wall; // Parede esquerda do HUD
-    SetConsoleTextAttribute(hConsole, gameIcons.pathColor); // Cor padrão para o texto do HUD
-    // Espaçamento para centralizar/ajustar o HUD
-    frameBuffer << "SCORE: " << score << "   TIME: " << fixed << setprecision(1) << tempoDecorrido << "s";
-    // Preencher o restante da linha do HUD com espaços para manter o alinhamento da borda
-    int hudTextLength = string("SCORE: ").length() + to_string(score).length() +
-                        string("   TIME: ").length() + to_string(static_cast<int>(tempoDecorrido)).length() + 1; // +1 para 's'
+    frameBuffer << gameIcons.ANSI_BRIGHT_BLUE << gameIcons.wall; // Cor da parede para a borda
+    frameBuffer << gameIcons.ANSI_WHITE; // Cor padrão para o texto do HUD (branco)
     
-    // Ajuste aqui para considerar a largura total desejada do HUD, que é largura do mapa.
-    // O texto do HUD tem um tamanho variável, então preenchemos o espaço restante.
-    // Contagem aproximada do texto para preencher corretamente.
-    // Lembre-se que 'largura' é a largura interna do mapa. As bordas adicionam 2.
-    // Ajuste o padding conforme necessário para o layout exato.
-    // Este cálculo é uma estimativa e pode precisar de ajuste fino.
-    int remainingSpace = largura - hudTextLength;
+    // Texto do HUD
+    string scoreStr = to_string(score);
+    string timeStr = to_string(static_cast<int>(tempoDecorrido)) + "s";
+    string hudDisplayText = "SCORE: " + scoreStr + "   TIME: " + timeStr;
+
+    // Adiciona o texto do HUD ao buffer com a cor desejada
+    frameBuffer << gameIcons.ANSI_BRIGHT_GREEN << hudDisplayText << gameIcons.ANSI_RESET;
+
+    // Preencher o restante da linha do HUD com espaços para manter o alinhamento da borda
+    int visualHudTextLength = hudDisplayText.length();
+    int remainingSpace = largura - visualHudTextLength;
+    
     if (remainingSpace > 0) {
         for (int i = 0; i < remainingSpace; ++i) {
             frameBuffer << ' ';
         }
     }
     
-    SetConsoleTextAttribute(hConsole, gameIcons.wallColor); // Cor da parede
-    frameBuffer << gameIcons.wall << "\n"; // Parede direita do HUD e quebra de linha
+    frameBuffer << gameIcons.ANSI_BRIGHT_BLUE << gameIcons.wall << gameIcons.ANSI_RESET << "\n"; // Parede direita do HUD e reset de cor
 
     // Linha separadora do HUD (mesmo caractere da borda)
-    SetConsoleTextAttribute(hConsole, gameIcons.wallColor); // Cor da parede
-    frameBuffer << gameIcons.wall; // Parede esquerda
+    frameBuffer << gameIcons.ANSI_BRIGHT_BLUE << gameIcons.wall; // Cor da parede
     for (int i = 0; i < largura; ++i) {
         frameBuffer << gameIcons.wall;
     }
-    frameBuffer << gameIcons.wall << "\n"; // Parede direita e quebra de linha
-    // *******************************************************************
+    frameBuffer << gameIcons.wall << gameIcons.ANSI_RESET << "\n"; // Parede direita e reset de cor
 
 
-    // Renderiza as bordas laterais e o conteúdo do mapa
+    // Renderiza as bordas laterais e o conteúdo do mapa com cores
     for (int y = 0; y < altura; y++)
     {
-        SetConsoleTextAttribute(hConsole, gameIcons.wallColor); // Cor da parede
-        frameBuffer << gameIcons.wall;
+        frameBuffer << gameIcons.ANSI_BRIGHT_BLUE << gameIcons.wall; // Cor da parede para a borda esquerda
         for (int x = 0; x < largura; x++)
         {
             char c = mapa[y][x];
             if (c == gameIcons.enemy)
             {
-                SetConsoleTextAttribute(hConsole, gameIcons.enemyColor);
+                frameBuffer << gameIcons.ANSI_BRIGHT_RED; // Define a cor para o inimigo
             }
             else if (c == gameIcons.shoot)
             {
-                SetConsoleTextAttribute(hConsole, gameIcons.shootColor);
+                frameBuffer << gameIcons.ANSI_BRIGHT_YELLOW; // Define a cor para o tiro do jogador
             }
             else if (c == gameIcons.spaceship)
             {
-                SetConsoleTextAttribute(hConsole, gameIcons.spaceshipColor);
+                frameBuffer << gameIcons.ANSI_BRIGHT_GREEN; // Define a cor para a nave
             }
-            else if (c == '|') // tiro do inimigo
+            else if (c == '|') // Tiro do inimigo (usando '|' como símbolo)
             {
-                SetConsoleTextAttribute(hConsole, 13); // magenta
+                frameBuffer << gameIcons.ANSI_BRIGHT_MAGENTA; // Define a cor para o tiro do inimigo
             }
             else
             {
-                SetConsoleTextAttribute(hConsole, gameIcons.pathColor); // cor padrão
+                frameBuffer << gameIcons.ANSI_WHITE; // Cor padrão para o caminho/vazio (branco)
             }
             frameBuffer << c; // Adiciona o caractere ao buffer
+            frameBuffer << gameIcons.ANSI_RESET; // **Importante: Resetar a cor após CADA caractere**
         }
-        SetConsoleTextAttribute(hConsole, gameIcons.wallColor); // Cor da parede
-        frameBuffer << gameIcons.wall << "\n";
-        SetConsoleTextAttribute(hConsole, gameIcons.pathColor); // Volta para cor do caminho
+        frameBuffer << gameIcons.ANSI_BRIGHT_BLUE << gameIcons.wall << gameIcons.ANSI_RESET << "\n"; // Parede direita e reset de cor
     }
 
     // Renderiza a base do mapa
-    SetConsoleTextAttribute(hConsole, gameIcons.wallColor); // Cor da parede
-    frameBuffer << gameIcons.wall;
+    frameBuffer << gameIcons.ANSI_BRIGHT_BLUE << gameIcons.wall;
     for (int x = 0; x < largura; x++)
         frameBuffer << gameIcons.wall;
-    frameBuffer << gameIcons.wall << "\n";
-    SetConsoleTextAttribute(hConsole, gameIcons.pathColor); // Volta para cor do caminho
+    frameBuffer << gameIcons.wall << gameIcons.ANSI_RESET << "\n";
+    
+    // Garante que a cor padrão volte após o frame completo para qualquer texto futuro
+    frameBuffer << gameIcons.ANSI_RESET;
 
-    // Garante que a cor padrão volte após o frame
-    SetConsoleTextAttribute(hConsole, gameIcons.pathColor);
-
-    cout << frameBuffer.str();
+    cout << frameBuffer.str(); // Imprime o frame completo de uma vez
 }
