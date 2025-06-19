@@ -22,9 +22,16 @@ void checkCollisions() {
             score += 10;
         }
     }
+    // Colisão do tiro inimigo com a nave do jogador
     if (tiroInimigoAtivo && tiroInimigoY == altura - 1 && tiroInimigoX == naveX) {
-        gameOver = true;
-        std::cout << "Você perdeu! Sua nave foi atingida.\n";
+        vidas--; // Decrementa uma vida
+        tiroInimigoAtivo = false; // Desativa o tiro inimigo para que não continue "colidindo"
+        if (vidas <= 0) {
+            gameOver = true;
+            std::cout << "Você perdeu! Todas as suas vidas se foram.\n";
+        } else {
+             // Opcional: Pausar brevemente ou exibir mensagem de que foi atingido
+        }
     }
 }
 
@@ -71,7 +78,7 @@ void updateTiroInimigo() {
             tiroInimigoAtivo = true;
         }
     } else {
-        tiroInimigoY++; // Alterado de '+= 2' para '++'
+        tiroInimigoY++;
         if (tiroInimigoY >= altura) {
             tiroInimigoAtivo = false;
         }

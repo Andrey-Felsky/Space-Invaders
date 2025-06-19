@@ -33,6 +33,8 @@ bool gameOver = false;
 bool tiroInimigoAtivo = false;
 int tiroInimigoX = 0, tiroInimigoY = 0;
 
+int vidas = 3; // Nova variável para as vidas
+
 const int FPS = 30;
 const std::chrono::milliseconds frameDuration(1000 / FPS);
 
@@ -60,6 +62,7 @@ void game(){
     tiroAtivo = false;
     score = 0;
     naveX = largura / 2;
+    vidas = 3; // Inicializa as vidas
     initEnemy();
 
     system("cls");
@@ -73,48 +76,37 @@ void game(){
     auto lastEnemyMoveTime = high_resolution_clock::now();
     auto lastEnemyShotTime = high_resolution_clock::now();
 
-    const std::chrono::milliseconds enemyMoveInterval(300); // Intervalo para o movimento dos inimigos
-    const std::chrono::milliseconds enemyShotInterval(800); // Intervalo para os inimigos atirarem
+    const std::chrono::milliseconds enemyMoveInterval(300);
+    const std::chrono::milliseconds enemyShotInterval(800);
 
     while (!gameOver) {
         auto now = high_resolution_clock::now();
         duration<float> elapsedTime = now - gameStartTime;
         float tempoDecorrido = elapsedTime.count();
 
-        // Lógica de controle de FPS (roda a cada frameDuration)
         if (now - lastFrameTime >= frameDuration) {
             cleanScreen();
-            render(score, tempoDecorrido);
+            render(score, tempoDecorrido, vidas); // Passa vidas para render
             input();
-            updateTire(); // Tiro do player atualiza a cada frame
-            updateTiroInimigo(); // Tiro do inimigo atualiza a cada frame (movimento fluido)
+            updateTire();
+            updateTiroInimigo();
             checkCollisions();
             checkEndOfGame();
             lastFrameTime = now;
         }
 
-        // Lógica de movimento dos inimigos (timer próprio)
         if (now - lastEnemyMoveTime >= enemyMoveInterval) {
             moveEnemies();
             lastEnemyMoveTime = now;
         }
 
-        // Lógica de disparo dos inimigos (timer próprio)
         if (!tiroInimigoAtivo && now - lastEnemyShotTime >= enemyShotInterval) {
-            updateTiroInimigo(); // Tenta gerar um novo tiro se o intervalo passou
+            updateTiroInimigo();
             lastEnemyShotTime = now;
         }
 
-        // --- Substituição de std::this_thread::sleep_until ---
-        // Este loop ativo (spin-lock) consome CPU, mas garante que o FPS não ultrapasse o limite
-        // para compiladores sem std::thread ou std::sleep_until.
-        // A duração mínima é garantida pelo if(now - lastFrameTime >= frameDuration) acima.
-        // Se a máquina for muito rápida, o loop vai esperar aqui até o próximo frame.
         while (high_resolution_clock::now() - lastFrameTime < frameDuration) {
-            // Espera ocupada (busy-wait). Ajustar FPS para um valor razoável (ex: 30-60)
-            // ajuda a reduzir o consumo de CPU.
         }
-        // --- Fim da Substituição ---
     }
     system("cls");
     auto gameEndTime = high_resolution_clock::now();

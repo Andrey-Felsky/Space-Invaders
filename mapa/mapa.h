@@ -15,7 +15,8 @@ extern bool tiroInimigoAtivo;
 extern int tiroInimigoX, tiroInimigoY;
 
 extern int naveX;
+extern int vidas;
 
-void render(int score, float tempo);
+void render(int score, float tempo, int vidas);
 
 #endif
