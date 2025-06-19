@@ -8,23 +8,21 @@
 #include <algorithm>
 using namespace std;
 
-const int MAX_RANKING = 100; // limite de registros
+const int MAX_RANKING = 100;
 
 void saveScore(const string& nome, int score) {
-    saveScore(nome, score, 0.0);  
+    saveScore(nome, score, 0.0);
 }
 void saveScore(const string& nome, int score, float tempo) {
     ofstream arq("../utils/scores/scores.txt", ios::app);
     if (!arq.is_open()) return;
 
-    // data atual
     time_t t = time(0);
     tm* now = localtime(&t);
     char buffer[11];
     strftime(buffer, sizeof(buffer), "%d/%m/%Y", now);
 
-    // define resultado
-    string resultado = (score >= 240) ? "VITÓRIA" : "DERROTA";
+    string resultado = (score >= 240) ? "VITORIA" : "DERROTA";
 
     arq << nome << "," << score << "," << buffer << "," << tempo << "," << resultado << "\n";
     arq.close();
@@ -44,12 +42,11 @@ void drawnRanking() {
     while (getline(arq, linha) && total < MAX_RANKING) {
         stringstream ss(linha);
         string nome, sscore, data, stempo, resultado;
-        //cada linha do arquivo é separarada os pedaços usando as virgulas. usamos stringstream para fazer isso
         getline(ss, nome, ',');
         getline(ss, sscore, ',');
         getline(ss, data, ',');
         getline(ss, stempo, ',');
-        getline(ss, resultado, ','); 
+        getline(ss, resultado, ',');
 
         registros[total].nome = nome;
         registros[total].score = stoi(sscore);
@@ -60,7 +57,6 @@ void drawnRanking() {
     }
     arq.close();
 
-    // ordena manualmente score decrescente
     for (int i = 0; i < total - 1; i++) {
         for (int j = 0; j < total - i - 1; j++) {
             if (registros[j].score < registros[j + 1].score) {
@@ -81,6 +77,6 @@ void drawnRanking() {
             << setw(12) << registros[i].data
             << fixed << setprecision(2) << setw(8) << registros[i].tempo
             << " " << registros[i].resultado << "\n";
-             
+
     }
 }

@@ -3,7 +3,7 @@
 
 extern const int largura;
 extern const int altura;
-extern char mapa[20][30]; // tamanho fixo conforme sua definição
+extern char mapa[20][30];
 
 extern bool inimigoVivo[25];
 extern int inimigos[25][2];

@@ -14,7 +14,7 @@ void exibirInstrucoes() {
     cout << "=== INSTRUCOES ===\n";
     cout << "- Use as teclas A e D para mover a nave\n";
     cout << "- Pressione ESPACO para atirar\n";
-    cout << "- Derrote todos os inimigos antes que eles cheguem até sua base\n";
+    cout << "- Derrote todos os inimigos antes que eles cheguem ate sua base\n";
     cout << "- Evite ser atingido pelos inimigos\n\n";
     cout << "Pressione ENTER para voltar ao menu...";
     cin.get();
@@ -25,6 +25,7 @@ void exibirRanking() {
     system("cls");
     cout << "=== RANKING ===\n";
     drawnRanking();
+    cout << "\nPressione ENTER para voltar ao menu...";
     cin.get();
     system("cls");
 }
@@ -32,13 +33,13 @@ void exibirRanking() {
 void renderMenu() {
     ClearConsole();
     cout << " ____  ____   _    ____ _____                   \n"
-"/ ___||  _ \\ / \\  / ___| ____|                  \n"
-"\\___ \\| |_) / _ \\| |   |  _|                    \n"
-" ___) |  __/ ___ \\ |___| |___                   \n"
+"| ___||  _ \\ / \\  / ___| ____|                  \n"
+"|\\___ \\| |_) / _ \\| |   |  _|                    \n"
+"| ___) |  __/ ___ \\ |___| |___                   \n"
 "|____/|_|_/_/   \\_\\____|_____|_____ ____  ____  \n"
 "|_ _| \\ | \\ \\   / / \\  |  _ \\| ____|  _ \\/ ___| \n"
-" | ||  \\| |\\ \\ / / _ \\ | | | |  _| | |_) \\___ \\ \n"
-" | || |\\  | \\ V / ___ \\| |_| | |___|  _ < ___) |\n"
+"| | ||  \\| |\\ \\ / / _ \\ | | | |  _| | |_) \\___ \\ \n"
+"| | || |\\  | \\ V / ___ \\| |_| | |___|  _ < ___) |\n"
 "|___|_| \\_|  \\_/_/   \\_\\____/|_____|_| \\_\\____/ \n\n";
     for (int i = 0; i < N_OPCOES; i++) {
         if (i == selectedItem) {
@@ -54,11 +55,11 @@ int navegarMenu() {
     while (true) {
         renderMenu();
         char tecla = _getch();
-        if (tecla == 'w' || tecla == 72) { // cima
+        if (tecla == 'w' || tecla == 72) {
             selectedItem = (selectedItem - 1 + N_OPCOES) % N_OPCOES;
-        } else if (tecla == 's' || tecla == 80) { // baixo
+        } else if (tecla == 's' || tecla == 80) {
             selectedItem = (selectedItem + 1) % N_OPCOES;
-        } else if (tecla == 13) { // Enter
+        } else if (tecla == 13) {
             return selectedItem;
         }
     }
@@ -70,10 +71,10 @@ void menu() {
         int opcao = navegarMenu();
 
         switch (opcao) {
-            case 0: return; 
+            case 0: return;
             case 1: exibirInstrucoes(); break;
             case 2: exibirRanking(); break;
-            case 3: exit(0); 
+            case 3: exit(0);
         }
     }
 }

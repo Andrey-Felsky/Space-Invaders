@@ -1,12 +1,12 @@
 #include "logic.h"
-#include "../enemy/enemy.h" 
+#include "../enemy/enemy.h"
 #include <iostream>
 #include "../utils/gameElements.h"
-
+#include <cstdlib>
 
 void updateTire() {
     if (tiroAtivo) {
-        tiroY--; // -- igual subindo
+        tiroY--;
         if (tiroY < 0) {
             tiroAtivo = false;
         }
@@ -15,7 +15,6 @@ void updateTire() {
 
 void checkCollisions() {
     for (int i = 0; i < 25; i++) {
-        //verifica se bateu em algum inimigo
         if (inimigoVivo[i] && tiroAtivo &&
             tiroX == inimigos[i][0] && tiroY == inimigos[i][1]) {
             inimigoVivo[i] = false;
@@ -23,18 +22,21 @@ void checkCollisions() {
             score += 10;
         }
     }
+    if (tiroInimigoAtivo && tiroInimigoY == altura - 1 && tiroInimigoX == naveX) {
+        gameOver = true;
+        std::cout << "Você perdeu! Sua nave foi atingida.\n";
+    }
 }
 
 void checkEndOfGame() {
-    // derrota se algum inimigo chegou na linha da nave
     for (int i = 0; i < 25; i++) {
-        if (inimigoVivo[i] && inimigos[i][1] >= 19) {
+        if (inimigoVivo[i] && inimigos[i][1] >= altura - 1) {
             gameOver = true;
             std::cout << "Você perdeu! Inimigos invadiram a base.\n";
+            return;
         }
     }
 
-    // vitória se todos mortos
     bool venceu = true;
     for (int i = 0; i < 25; i++) {
         if (inimigoVivo[i]) {
@@ -51,7 +53,6 @@ void checkEndOfGame() {
 
 void updateTiroInimigo() {
     if (!tiroInimigoAtivo) {
-        // cria lista com indices de inimigos vivos
         int vivos[25];
         int totalVivos = 0;
 
@@ -62,23 +63,17 @@ void updateTiroInimigo() {
         }
 
         if (totalVivos > 0) {
-            // sscolhe um inimigo aleatório entre os vivos
             int index = rand() % totalVivos;
             int escolhido = vivos[index];
 
-            // Cria o tiro saindo desse inimigo
             tiroInimigoX = inimigos[escolhido][0];
             tiroInimigoY = inimigos[escolhido][1] + 1;
             tiroInimigoAtivo = true;
         }
     } else {
-        tiroInimigoY++; // ++ igual descendo
-        if (tiroInimigoY >= altura - 1) {
+        tiroInimigoY++;
+        if (tiroInimigoY >= altura) {
             tiroInimigoAtivo = false;
-        }
-        //acaba o jogo se acertar a nave
-        if (tiroInimigoY == altura - 1 && tiroInimigoX == naveX) {
-            gameOver = true;
         }
     }
 }

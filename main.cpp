@@ -3,7 +3,7 @@
 #include <conio.h>
 #include <chrono>
 #include <cstdlib>
-#include <ctime> 
+#include <ctime>
 
 #include "mapa/mapa.h"
 #include "enemy/enemy.h"
@@ -15,18 +15,11 @@
 using namespace std;
 using namespace std::chrono;
 
-//COMANDO PARA COMPILAR: 
-//g++ main.cpp mapa/mapa.cpp enemy/enemy.cpp logic/logic.cpp menu/menu.cpp ranking/score.cpp utils/cleanScreen/cleanScreen.cpp -o output/main.exe
-
-//ATENCAO:
-// criar um arquivo novo ou pasta incluir no comando
-
-//variaceis mapa
 const int largura = 30;
 const int altura = 20;
 char mapa[altura][largura];
 
-int naveX = largura / 2; // começa no meio do mapa
+int naveX = largura / 2;
 
 bool inimigoVivo[25];
 int inimigos[25][2];
@@ -41,7 +34,10 @@ bool tiroInimigoAtivo = false;
 int tiroInimigoX = 0, tiroInimigoY = 0;
 
 int contadorMovimento = 0;
-int intervaloTempo = 15; 
+int intervaloTempo = 15;
+
+const int FPS = 30;
+const std::chrono::milliseconds frameDuration(1000 / FPS);
 
 void input() {
     if (_kbhit()) {
@@ -63,66 +59,75 @@ void input() {
 }
 
 void game(){
-    // zera estado do jogo
     gameOver = false;
     tiroAtivo = false;
     score = 0;
     naveX = largura / 2;
-    initEnemy(); // inicializa os inimigos
+    initEnemy();
 
     system("cls");
     string nome;
     cout << "Digite seu nome: ";
     cin >> nome;
+    cin.ignore();
 
-    auto inicio = high_resolution_clock::now(); //comeca a contar o tempo da partida.
+    auto inicio = high_resolution_clock::now();
+    auto lastFrameTime = high_resolution_clock::now();
+    auto lastEnemyMoveTime = high_resolution_clock::now();
+    auto lastEnemyShotTime = high_resolution_clock::now();
 
-    // loop principal do jogo
+    const std::chrono::milliseconds enemyMoveInterval(300);
+    const std::chrono::milliseconds enemyShotInterval(1000);
+
+
     while (!gameOver) {
-
-        //calculamos o tempo que passou desde que o jogo começou.
-        auto agora = high_resolution_clock::now();
-        duration<float> duracao = agora - inicio;
+        auto now = high_resolution_clock::now();
+        duration<float> duracao = now - inicio;
         float tempoDecorrido = duracao.count();
 
-        cleanScreen(); //limpa a tela
-        render(score, tempoDecorrido); //renderiza o mapa, enimigos e tiros
-        input(); // recebe os dados do player
-        updateTire(); // atualiza os tiros
-        updateTiroInimigo(); // atualiza os tiros do inimigo
-        checkCollisions(); // checa as colisões 
+        if (now - lastFrameTime >= frameDuration) {
+            cleanScreen();
+            render(score, tempoDecorrido);
+            input();
+            updateTire();
+            checkCollisions();
 
-        contadorMovimento++;
-        if (contadorMovimento >= intervaloTempo) {
-            moveEnemies();
-            contadorMovimento = 0;
+            if (now - lastEnemyMoveTime >= enemyMoveInterval) {
+                moveEnemies();
+                lastEnemyMoveTime = now;
+            }
+
+            if (now - lastEnemyShotTime >= enemyShotInterval) {
+                updateTiroInimigo();
+                lastEnemyShotTime = now;
+            }
+
+            checkEndOfGame();
+            lastFrameTime = now;
         }
-
-        checkEndOfGame(); // funcao que checa se chegou no final do jogo
     }
     system("cls");
-    //marca o fim da partida.
     auto fim = high_resolution_clock::now();
-    duration<float> duracao = fim - inicio;
+    duration<float> duracaoFinal = fim - inicio;
 
-    resetColor(); //necessario para o menu nao mudar de cor
+    resetColor();
     cout << "\nScore final: " << score << endl;
 
-    saveScore(nome, score, duracao.count());
+    saveScore(nome, score, duracaoFinal.count());
 
     cout << "\nPressione ENTER para voltar ao menu...";
     cin.get();
-
     system("cls");
 }
 
 int main() {
+    srand(time(NULL));
     system("cls");
     hideCursor();
 
     while (true) {
-        menu();         
-        game();  
+        menu();
+        game();
     }
 
     return 0;
