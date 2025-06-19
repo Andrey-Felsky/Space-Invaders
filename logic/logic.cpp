@@ -71,7 +71,7 @@ void updateTiroInimigo() {
             tiroInimigoAtivo = true;
         }
     } else {
-        tiroInimigoY++;
+        tiroInimigoY++; // Alterado de '+= 2' para '++'
         if (tiroInimigoY >= altura) {
             tiroInimigoAtivo = false;
         }
