@@ -1,9 +1,12 @@
+#define NOMINMAX // Adicione esta linha AQUI
+
 #include <iostream>
-#include <windows.h>
+#include <windows.h> // Agora, windows.h não definirá as macros min/max
 #include <conio.h>
 #include <chrono>
 #include <cstdlib>
 #include <ctime>
+#include <algorithm> // std::max funcionará corretamente aqui
 
 #include "mapa/mapa.h"
 #include "enemy/enemy.h"
@@ -33,7 +36,7 @@ bool gameOver = false;
 bool tiroInimigoAtivo = false;
 int tiroInimigoX = 0, tiroInimigoY = 0;
 
-int vidas = 3; // Nova variável para as vidas
+int vidas = 3;
 
 const int FPS = 30;
 const std::chrono::milliseconds frameDuration(1000 / FPS);
@@ -62,7 +65,11 @@ void game(){
     tiroAtivo = false;
     score = 0;
     naveX = largura / 2;
-    vidas = 3; // Inicializa as vidas
+    vidas = 3;
+
+    enemiesDefeatedCount = 0;
+    enemyMoveInterval = INITIAL_ENEMY_MOVE_INTERVAL;
+
     initEnemy();
 
     system("cls");
@@ -76,7 +83,6 @@ void game(){
     auto lastEnemyMoveTime = high_resolution_clock::now();
     auto lastEnemyShotTime = high_resolution_clock::now();
 
-    const std::chrono::milliseconds enemyMoveInterval(300);
     const std::chrono::milliseconds enemyShotInterval(800);
 
     while (!gameOver) {
@@ -86,7 +92,7 @@ void game(){
 
         if (now - lastFrameTime >= frameDuration) {
             cleanScreen();
-            render(score, tempoDecorrido, vidas); // Passa vidas para render
+            render(score, tempoDecorrido, vidas);
             input();
             updateTire();
             updateTiroInimigo();
