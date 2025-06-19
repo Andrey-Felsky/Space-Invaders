@@ -6,13 +6,11 @@
 #include <ctime>
 #include <iomanip>
 #include <algorithm>
-using namespace std;
+
+using namespace std; 
 
 const int MAX_RANKING = 100;
 
-void saveScore(const string& nome, int score) {
-    saveScore(nome, score, 0.0);
-}
 void saveScore(const string& nome, int score, float tempo) {
     ofstream arq("../utils/scores/scores.txt", ios::app);
     if (!arq.is_open()) return;
@@ -22,7 +20,7 @@ void saveScore(const string& nome, int score, float tempo) {
     char buffer[11];
     strftime(buffer, sizeof(buffer), "%d/%m/%Y", now);
 
-    string resultado = (score >= 240) ? "VITORIA" : "DERROTA";
+    string resultado = (score >= 240) ? "VITÓRIA" : "DERROTA";
 
     arq << nome << "," << score << "," << buffer << "," << tempo << "," << resultado << "\n";
     arq.close();
@@ -37,16 +35,16 @@ void drawnRanking() {
 
     PlayerRegistrationAndScore registros[MAX_RANKING];
     int total = 0;
-    string linha;
+    string line;
+    while (getline(arq, line) && total < MAX_RANKING) {
+        stringstream ss(line);
+        string nome, sscore, data, stempo, resultado; 
 
-    while (getline(arq, linha) && total < MAX_RANKING) {
-        stringstream ss(linha);
-        string nome, sscore, data, stempo, resultado;
         getline(ss, nome, ',');
         getline(ss, sscore, ',');
         getline(ss, data, ',');
         getline(ss, stempo, ',');
-        getline(ss, resultado, ',');
+        getline(ss, resultado, ','); 
 
         registros[total].nome = nome;
         registros[total].score = stoi(sscore);
@@ -63,7 +61,6 @@ void drawnRanking() {
                 PlayerRegistrationAndScore temp = registros[j];
                 registros[j] = registros[j + 1];
                 registros[j + 1] = temp;
-                registros[i].resultado;
             }
         }
     }
@@ -71,12 +68,12 @@ void drawnRanking() {
     system("cls");
     cout << "\n====================== RANKING ======================\n";
     cout << left << setw(12) << "Nome" << setw(10) << "Score" << setw(12) << "Data" << setw(8) << "Tempo" << "Resultado\n";
-    for (int i = 0; i < total && i < 10; i++) {
-       cout << setw(12) << registros[i].nome
-            << setw(10) << registros[i].score
-            << setw(12) << registros[i].data
-            << fixed << setprecision(2) << setw(8) << registros[i].tempo
-            << " " << registros[i].resultado << "\n";
-
+    for (int i = 0; i < min(total, 10); i++) {
+        cout << left << setw(12) << registros[i].nome
+             << setw(10) << registros[i].score
+             << setw(12) << registros[i].data
+             << setw(8) << fixed << setprecision(1) << registros[i].tempo
+             << registros[i].resultado << "\n";
     }
+    cout << "=====================================================\n";
 }

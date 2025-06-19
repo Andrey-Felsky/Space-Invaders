@@ -1,10 +1,10 @@
 #ifndef ENEMY_H
 #define ENEMY_H
 
-#include "../mapa/mapa.h"
+#include "../utils/constants.h"
 
-extern int inimigos[25][2];    // [i][0] = x, [i][1] = y
-extern bool inimigoVivo[25];
+extern int inimigos[ENEMY_ARRAY_MAX_SIZE][2];
+extern bool inimigoVivo[ENEMY_ARRAY_MAX_SIZE];
 extern int dirInimigo;
 
 void initEnemy();

@@ -1,12 +1,12 @@
-#define NOMINMAX // Adicione esta linha AQUI
+#define NOMINMAX
 
 #include <iostream>
-#include <windows.h> // Agora, windows.h não definirá as macros min/max
+#include <windows.h>
 #include <conio.h>
 #include <chrono>
 #include <cstdlib>
 #include <ctime>
-#include <algorithm> // std::max funcionará corretamente aqui
+#include <algorithm>
 
 #include "mapa/mapa.h"
 #include "enemy/enemy.h"
@@ -14,18 +14,16 @@
 #include "menu/menu.h"
 #include "ranking/score.h"
 #include "utils/cleanScreen/cleanScreen.h"
+#include "utils/constants.h"
 
 using namespace std;
 using namespace std::chrono;
 
-const int largura = 30;
-const int altura = 20;
-char mapa[altura][largura];
+char mapa[ALTURA_MAPA][LARGURA_MAPA];
+int naveX = LARGURA_MAPA / 2;
 
-int naveX = largura / 2;
-
-bool inimigoVivo[25];
-int inimigos[25][2];
+bool inimigoVivo[ENEMY_ARRAY_MAX_SIZE];
+int inimigos[ENEMY_ARRAY_MAX_SIZE][2];
 
 bool tiroAtivo = false;
 int tiroX = 0, tiroY = 0;
@@ -48,13 +46,13 @@ void input() {
             if (naveX > 0) naveX--;
         }
         else if (tecla == 'd' || tecla == 'D') {
-            if (naveX < largura - 1) naveX++;
+            if (naveX < LARGURA_MAPA - 1) naveX++;
         }
         else if (tecla == ' ') {
             if (!tiroAtivo) {
                 tiroAtivo = true;
                 tiroX = naveX;
-                tiroY = altura - 2;
+                tiroY = ALTURA_MAPA - 2;
             }
         }
     }
@@ -64,7 +62,7 @@ void game(){
     gameOver = false;
     tiroAtivo = false;
     score = 0;
-    naveX = largura / 2;
+    naveX = LARGURA_MAPA / 2;
     vidas = 3;
 
     enemiesDefeatedCount = 0;

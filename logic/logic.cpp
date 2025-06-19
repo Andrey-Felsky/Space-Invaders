@@ -1,17 +1,24 @@
 #include "logic.h"
-#include "../enemy/enemy.h"
+#include "../enemy/enemy.h" 
 #include <iostream>
 #include "../utils/gameElements.h"
+#include "../utils/constants.h"
 #include <cstdlib>
-#include <algorithm> // Necessário para std::max
+#include <algorithm>
+#include <chrono>
 
-// Definições das variáveis e constantes externas declaradas em logic.h
-std::chrono::milliseconds enemyMoveInterval(500); // Definição: valor inicial, DEVE ser o mesmo de INITIAL_ENEMY_MOVE_INTERVAL
-const std::chrono::milliseconds INITIAL_ENEMY_MOVE_INTERVAL(500); // Valor inicial da velocidade (mais lento)
-const std::chrono::milliseconds MIN_ENEMY_MOVE_INTERVAL(80);    // Valor mínimo da velocidade (mais rápido)
-const int SPEED_DECREASE_PER_TIER_MS = 35; // A cada 2 inimigos, diminui 35ms do intervalo
+std::chrono::milliseconds enemyMoveInterval(INITIAL_ENEMY_MOVE_INTERVAL);
+const std::chrono::milliseconds INITIAL_ENEMY_MOVE_INTERVAL(500);
+const std::chrono::milliseconds MIN_ENEMY_MOVE_INTERVAL(80);
+const int SPEED_DECREASE_PER_TIER_MS = 35;
 
-int enemiesDefeatedCount = 0; // Definição: contador de inimigos derrotados
+int enemiesDefeatedCount = 0;
+
+bool explosionActiveEnemy = false;
+int explosionEnemyX = 0, explosionEnemyY = 0;
+bool explosionActivePlayer = false;
+int explosionPlayerX = 0, explosionPlayerY = 0;
+std::chrono::high_resolution_clock::time_point explosionStartTime;
 
 void updateTire() {
     if (tiroAtivo) {
@@ -22,45 +29,47 @@ void updateTire() {
     }
 }
 
-// Nova função para ajustar a velocidade dos inimigos
 void adjustEnemySpeed() {
-    // Calcula o "tier" de velocidade: cada 2 inimigos derrotados aumentam a velocidade
     int speedTier = enemiesDefeatedCount / 2;
-
-    // Calcula o novo intervalo, diminuindo-o a cada tier
     std::chrono::milliseconds newInterval = INITIAL_ENEMY_MOVE_INTERVAL - std::chrono::milliseconds(speedTier * SPEED_DECREASE_PER_TIER_MS);
-
-    // Garante que o intervalo não seja menor que o mínimo (limite de velocidade)
     enemyMoveInterval = std::max(newInterval, MIN_ENEMY_MOVE_INTERVAL);
 }
 
 void checkCollisions() {
-    for (int i = 0; i < 25; i++) {
+    for (int i = 0; i < ENEMY_ARRAY_MAX_SIZE; i++) {
         if (inimigoVivo[i] && tiroAtivo &&
             tiroX == inimigos[i][0] && tiroY == inimigos[i][1]) {
             inimigoVivo[i] = false;
             tiroAtivo = false;
             score += 10;
             
-            // Inimigo derrotado: atualiza o contador e a velocidade
             enemiesDefeatedCount++; 
             adjustEnemySpeed();
+
+            explosionActiveEnemy = true;
+            explosionEnemyX = inimigos[i][0];
+            explosionEnemyY = inimigos[i][1];
+            explosionStartTime = std::chrono::high_resolution_clock::now();
         }
     }
-    // Colisão do tiro inimigo com a nave do jogador
-    if (tiroInimigoAtivo && tiroInimigoY == altura - 1 && tiroInimigoX == naveX) {
+    if (tiroInimigoAtivo && tiroInimigoY == ALTURA_MAPA - 1 && tiroInimigoX == naveX) {
         vidas--;
         tiroInimigoAtivo = false; 
+
+        explosionActivePlayer = true;
+        explosionPlayerX = naveX;
+        explosionPlayerY = ALTURA_MAPA - 1;
+        explosionStartTime = std::chrono::high_resolution_clock::now();
+
         if (vidas <= 0) {
             gameOver = true;
-            std::cout << "Você perdeu! Todas as suas vidas se foram.\n";
         }
     }
 }
 
 void checkEndOfGame() {
-    for (int i = 0; i < 25; i++) {
-        if (inimigoVivo[i] && inimigos[i][1] >= altura - 1) {
+    for (int i = 0; i < TOTAL_INITIAL_ENEMIES; i++) {
+        if (inimigoVivo[i] && inimigos[i][1] >= ALTURA_MAPA - 1) {
             gameOver = true;
             std::cout << "Você perdeu! Inimigos invadiram a base.\n";
             return;
@@ -68,7 +77,7 @@ void checkEndOfGame() {
     }
 
     bool venceu = true;
-    for (int i = 0; i < 25; i++) {
+    for (int i = 0; i < TOTAL_INITIAL_ENEMIES; i++) {
         if (inimigoVivo[i]) {
             venceu = false;
             break;
@@ -83,10 +92,10 @@ void checkEndOfGame() {
 
 void updateTiroInimigo() {
     if (!tiroInimigoAtivo) {
-        int vivos[25];
+        int vivos[ENEMY_ARRAY_MAX_SIZE];
         int totalVivos = 0;
 
-        for (int i = 0; i < 25; i++) {
+        for (int i = 0; i < TOTAL_INITIAL_ENEMIES; i++) {
             if (inimigoVivo[i]) {
                 vivos[totalVivos++] = i;
             }
@@ -102,7 +111,7 @@ void updateTiroInimigo() {
         }
     } else {
         tiroInimigoY++;
-        if (tiroInimigoY >= altura) {
+        if (tiroInimigoY >= ALTURA_MAPA) {
             tiroInimigoAtivo = false;
         }
     }

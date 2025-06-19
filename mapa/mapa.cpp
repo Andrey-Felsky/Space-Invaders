@@ -1,24 +1,29 @@
 #include "mapa.h"
 #include "../utils/gameElements.h"
+#include "../logic/logic.h"
+#include "../utils/constants.h"
 #include <iostream>
 #include <windows.h>
 #include <iomanip>
 #include <string>
 #include <sstream>
+#include <chrono>
+
 using namespace std;
+using namespace std::chrono;
 
 GameElements gameIcons;
 HANDLE hConsole = GetStdHandle(STD_OUTPUT_HANDLE);
 
 void render(int score, float tempo, int currentVidas)
 {
-    // Desenha a borda superior do painel de status
+    auto now = high_resolution_clock::now();
+
     cout << gameIcons.wall;
-    for (int x = 0; x < largura; x++)
+    for (int x = 0; x < LARGURA_MAPA; x++)
         cout << gameIcons.wall;
     cout << gameIcons.wall << "\n";
 
-    // --- Construção da linha de status Superior (Score e Tempo) ---
     stringstream ssScore;
     ssScore << "Score: " << score;
     string scoreStr = ssScore.str();
@@ -27,45 +32,36 @@ void render(int score, float tempo, int currentVidas)
     ssTempo << fixed << setprecision(1) << tempo << "s";
     string tempoStr = "Tempo: " + ssTempo.str();
 
-    // Largura total ocupada pelo texto Score e Tempo
     int occupiedLength = scoreStr.length() + tempoStr.length();
-    // Espaço disponível para preencher entre Score e Tempo
-    int padding = largura - occupiedLength;
+    int padding = LARGURA_MAPA - occupiedLength;
 
-    cout << gameIcons.wall; // Borda esquerda
-    SetConsoleTextAttribute(hConsole, 7); // Cor padrão para score
+    cout << gameIcons.wall;
+    SetConsoleTextAttribute(hConsole, 7);
     cout << scoreStr;
 
-    // Preenche o espaço entre Score e Tempo
     for (int i = 0; i < padding; ++i) {
         cout << " ";
     }
     
-    SetConsoleTextAttribute(hConsole, 7); // Cor padrão para tempo
+    SetConsoleTextAttribute(hConsole, 7);
     cout << tempoStr;
     
-    cout << gameIcons.wall << "\n"; // Borda direita e quebra de linha
+    cout << gameIcons.wall << "\n";
 
-    // Desenha a linha divisória do status
     cout << gameIcons.wall;
-    for (int x = 0; x < largura; x++)
+    for (int x = 0; x < LARGURA_MAPA; x++)
         cout << gameIcons.wall;
     cout << gameIcons.wall << "\n";
 
-    // --- Fim da Construção da linha de status Superior ---
-
-
-    // Limpa o conteúdo do mapa com o "chão"
-    for (int y = 0; y < altura; y++)
+    for (int y = 0; y < ALTURA_MAPA; y++)
     {
-        for (int x = 0; x < largura; x++)
+        for (int x = 0; x < LARGURA_MAPA; x++)
         {
             mapa[y][x] = gameIcons.path;
         }
     }
 
-    // Renderiza os inimigos
-    for (int i = 0; i < 25; i++)
+    for (int i = 0; i < TOTAL_INITIAL_ENEMIES; i++)
     {
         if (inimigoVivo[i])
         {
@@ -76,20 +72,34 @@ void render(int score, float tempo, int currentVidas)
     if (tiroAtivo && tiroY >= 0)
         mapa[tiroY][tiroX] = gameIcons.shoot;
 
-    if (tiroInimigoAtivo && tiroInimigoY >= 0 && tiroInimigoY < altura)
+    if (tiroInimigoAtivo && tiroInimigoY >= 0 && tiroInimigoY < ALTURA_MAPA)
         mapa[tiroInimigoY][tiroInimigoX] = '|';
 
-    mapa[altura - 1][naveX] = gameIcons.spaceship;
+    mapa[ALTURA_MAPA - 1][naveX] = gameIcons.spaceship;
 
-    // Renderiza o mapa com as bordas laterais e cores
-    for (int y = 0; y < altura; y++)
+    if (explosionActiveEnemy) {
+        if (now - explosionStartTime < EXPLOSION_DURATION) {
+            mapa[explosionEnemyY][explosionEnemyX] = 'X';
+        } else {
+            explosionActiveEnemy = false;
+        }
+    }
+
+    if (explosionActivePlayer) {
+        if (now - explosionStartTime < EXPLOSION_DURATION) {
+            mapa[explosionPlayerY][explosionPlayerX] = '@';
+        } else {
+            explosionActivePlayer = false;
+        }
+    }
+
+    for (int y = 0; y < ALTURA_MAPA; y++)
     {
         cout << gameIcons.wall;
-        for (int x = 0; x < largura; x++)
+        for (int x = 0; x < LARGURA_MAPA; x++)
         {
             char c = mapa[y][x];
 
-            // Define cor com base no caractere
             if (c == gameIcons.enemy)
             {
                 SetConsoleTextAttribute(hConsole, gameIcons.enemyColor);
@@ -104,51 +114,48 @@ void render(int score, float tempo, int currentVidas)
             }
             else if (c == '|')
             {
-                SetConsoleTextAttribute(hConsole, 13); // Cor para o tiro inimigo
+                SetConsoleTextAttribute(hConsole, 13); 
+            }
+            else if (c == 'X' || c == '@')
+            {
+                SetConsoleTextAttribute(hConsole, 6);
             }
             else
             {
-                SetConsoleTextAttribute(hConsole, 7); // Cor padrão
+                SetConsoleTextAttribute(hConsole, 7); 
             }
 
             cout << c;
         }
-        SetConsoleTextAttribute(hConsole, 7); // Reset cor da borda lateral
+        SetConsoleTextAttribute(hConsole, 7);
         cout << gameIcons.wall << "\n";
     }
 
-    // Renderiza a borda inferior do mapa
     cout << gameIcons.wall;
-    for (int x = 0; x < largura; x++)
+    for (int x = 0; x < LARGURA_MAPA; x++)
         cout << gameIcons.wall;
     cout << gameIcons.wall << "\n";
 
-
-    // --- Nova linha para as Vidas (abaixo do mapa) ---
-    cout << gameIcons.wall; // Borda esquerda
-    SetConsoleTextAttribute(hConsole, 7); // Cor padrão para "Vidas:"
+    cout << gameIcons.wall;
+    SetConsoleTextAttribute(hConsole, 7);
     cout << "Vidas: ";
 
-    SetConsoleTextAttribute(hConsole, gameIcons.enemyColor); // Cor vermelha para os blocos de vida
+    SetConsoleTextAttribute(hConsole, gameIcons.enemyColor);
     for (int i = 0; i < currentVidas; ++i) {
-        cout << char(254) << " "; // Bloco preenchido + espaço
+        cout << char(254) << " ";
     }
-    // Preenche o restante da linha para alinhar com a borda
-    int vidasContentLength = string("Vidas: ").length() + (currentVidas * 2); // 2 por char(254) + espaço
-    int remainingSpaceForLives = largura - vidasContentLength;
+    int vidasContentLength = string("Vidas: ").length() + (currentVidas * 2);
+    int remainingSpaceForLives = LARGURA_MAPA - vidasContentLength;
     for (int i = 0; i < remainingSpaceForLives; ++i) {
         cout << " ";
     }
-    SetConsoleTextAttribute(hConsole, 7); // Reset cor
-    cout << gameIcons.wall << "\n"; // Borda direita e quebra de linha
+    SetConsoleTextAttribute(hConsole, 7);
+    cout << gameIcons.wall << "\n";
 
-    // Borda final da tela
     cout << gameIcons.wall;
-    for (int x = 0; x < largura; x++)
+    for (int x = 0; x < LARGURA_MAPA; x++)
         cout << gameIcons.wall;
     cout << gameIcons.wall << "\n";
-    // --- Fim da nova linha para as Vidas ---
 
-
-    SetConsoleTextAttribute(hConsole, 7); // Resetar cor final
+    SetConsoleTextAttribute(hConsole, 7);
 }
