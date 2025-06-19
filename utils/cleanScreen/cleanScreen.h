@@ -4,5 +4,5 @@
 void cleanScreen();
 void hideCursor();
 void resetColor();
-
+void ClearConsole();
 #endif

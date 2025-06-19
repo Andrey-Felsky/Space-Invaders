@@ -17,3 +17,12 @@ void resetColor() {
     HANDLE hConsole = GetStdHandle(STD_OUTPUT_HANDLE);
     SetConsoleTextAttribute(hConsole, 7);
 }
+void ClearConsole(){
+    HANDLE out = GetStdHandle(STD_OUTPUT_HANDLE);
+    CONSOLE_CURSOR_INFO cursorInfo;
+    GetConsoleCursorInfo(out, &cursorInfo);
+    cursorInfo.bVisible = false;
+    SetConsoleCursorInfo(out, &cursorInfo);
+    COORD pos = {0, 0};
+    SetConsoleCursorPosition(out, pos);
+}

@@ -33,7 +33,7 @@ void exibirRanking() {
 }
 
 void renderMenu() {
-    cleanScreen();
+    ClearConsole();
     cout << " ____  ____   _    ____ _____                   \n"\
             "/ ___||  _ \\\\ / \\\\  / ___| ____|                  \n"\
             "\\\\___ \\\\| |_) / _ \\\\| |   |  _|                    \n"\

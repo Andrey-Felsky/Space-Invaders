@@ -16,4 +16,7 @@ const int ENEMY_ARRAY_MAX_SIZE = 25;
 
 const std::chrono::milliseconds EXPLOSION_DURATION(100);
 
+const int ITEM_DROP_CHANCE = 20;
+const std::chrono::milliseconds ITEM_MOVE_INTERVAL(100);
+
 #endif

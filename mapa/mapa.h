@@ -16,6 +16,9 @@ extern int tiroInimigoX, tiroInimigoY;
 
 extern int naveX;
 
+extern bool itemDropActive;
+extern int itemDropX, itemDropY;
+
 void render(int score, float tempo, int currentVidas);
 
 #endif

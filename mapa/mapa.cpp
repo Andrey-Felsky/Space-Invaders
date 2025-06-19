@@ -93,6 +93,10 @@ void render(int score, float tempo, int currentVidas)
         }
     }
 
+    if (itemDropActive && itemDropY < ALTURA_MAPA && itemDropX < LARGURA_MAPA) {
+        mapa[itemDropY][itemDropX] = '+';
+    }
+
     for (int y = 0; y < ALTURA_MAPA; y++)
     {
         cout << gameIcons.wall;
@@ -119,6 +123,10 @@ void render(int score, float tempo, int currentVidas)
             else if (c == 'X' || c == '@')
             {
                 SetConsoleTextAttribute(hConsole, 6);
+            }
+            else if (c == '+') // Cor para o item
+            {
+                SetConsoleTextAttribute(hConsole, 11);
             }
             else
             {

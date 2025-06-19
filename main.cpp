@@ -36,6 +36,9 @@ int tiroInimigoX = 0, tiroInimigoY = 0;
 
 int vidas = 3;
 
+bool itemDropActive = false;
+int itemDropX = 0, itemDropY = 0;
+
 const int FPS = 30;
 const std::chrono::milliseconds frameDuration(1000 / FPS);
 
@@ -65,6 +68,8 @@ void game(){
     naveX = LARGURA_MAPA / 2;
     vidas = 3;
 
+    itemDropActive = false;
+
     enemiesDefeatedCount = 0;
     enemyMoveInterval = INITIAL_ENEMY_MOVE_INTERVAL;
 
@@ -80,6 +85,7 @@ void game(){
     auto lastFrameTime = high_resolution_clock::now();
     auto lastEnemyMoveTime = high_resolution_clock::now();
     auto lastEnemyShotTime = high_resolution_clock::now();
+    auto lastItemDropMoveTime = high_resolution_clock::now();
 
     const std::chrono::milliseconds enemyShotInterval(800);
 
@@ -107,6 +113,11 @@ void game(){
         if (!tiroInimigoAtivo && now - lastEnemyShotTime >= enemyShotInterval) {
             updateTiroInimigo();
             lastEnemyShotTime = now;
+        }
+
+        if (itemDropActive && now - lastItemDropMoveTime >= ITEM_MOVE_INTERVAL) {
+            updateItemDrop();
+            lastItemDropMoveTime = now;
         }
 
         while (high_resolution_clock::now() - lastFrameTime < frameDuration) {

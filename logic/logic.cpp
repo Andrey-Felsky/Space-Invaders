@@ -35,6 +35,27 @@ void adjustEnemySpeed() {
     enemyMoveInterval = std::max(newInterval, MIN_ENEMY_MOVE_INTERVAL);
 }
 
+void tryDropItem(int enemyX, int enemyY) {
+    if ((rand() % 100) < ITEM_DROP_CHANCE) {
+        itemDropActive = true;
+        itemDropX = enemyX;
+        itemDropY = enemyY;
+    }
+}
+
+void updateItemDrop() {
+    if (itemDropActive) {
+        itemDropY++;
+        if (itemDropY >= ALTURA_MAPA - 1) { 
+            if (itemDropX == naveX) {
+                itemDropActive = false;
+            } else if (itemDropY >= ALTURA_MAPA) { 
+                itemDropActive = false;
+            }
+        }
+    }
+}
+
 void checkCollisions() {
     for (int i = 0; i < ENEMY_ARRAY_MAX_SIZE; i++) {
         if (inimigoVivo[i] && tiroAtivo &&
@@ -45,6 +66,8 @@ void checkCollisions() {
             
             enemiesDefeatedCount++; 
             adjustEnemySpeed();
+
+            tryDropItem(inimigos[i][0], inimigos[i][1]);
 
             explosionActiveEnemy = true;
             explosionEnemyX = inimigos[i][0];
