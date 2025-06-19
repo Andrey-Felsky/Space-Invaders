@@ -23,7 +23,7 @@ extern ItemType itemDropType; // Make sure ItemType is known (include constants.
 extern std::chrono::high_resolution_clock::time_point speedBoostEndTime;
 extern std::chrono::high_resolution_clock::time_point extraShotEndTime;
 extern std::chrono::high_resolution_clock::time_point multiShotEndTime;
-extern std::chrono::high_resolution_clock::time_point freezeEndTime;
+extern std::chrono::high_resolution_clock::time_point enemyFreezeEndTime;
 extern int maxPlayerBulletsAllowed; // For displaying status of extra shot
 
 void render(int score, float tempo, int currentVidas);
