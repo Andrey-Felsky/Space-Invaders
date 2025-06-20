@@ -276,8 +276,7 @@ void menu()
                     break;
                 case 4: // Sair
                     cleanScreen();
-                    // Paleta "Frio": Azul -> Azul Claro -> Ciano -> Ciano Claro -> Verde Claro -> Branco -> Branco Brilhante
-                    const std::vector<int> coolGradient = {1, 9, 3, 11, 10, 7, 15};
+                    setMenuColor(7); // Define a cor para branco
                     const std::vector<std::string> gameOverLines = {
                         "::::::::::: :::    :::     :::     ::::    ::: :::    ::: ::::::::  ",
                         "    :+:     :+:    :+:   :+: :+:   :+:+:   :+: :+:   :+: :+:    :+: ",
@@ -287,10 +286,9 @@ void menu()
                         "    #+#     #+#    #+# #+#     #+# #+#   #+#+# #+#   #+# #+#    #+# ",
                         "    ###     ###    ### ###     ### ###    #### ###    ### ########  "};
 
-                    for (size_t i = 0; i < gameOverLines.size(); ++i)
+                    for (const auto& line : gameOverLines)
                     {
-                        setMenuColor(coolGradient[i % coolGradient.size()]);
-                        std::cout << gameOverLines[i] << std::endl;
+                        std::cout << line << std::endl;
                     }
                     std::cout << "\n\n";
                     exit(0);
