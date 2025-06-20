@@ -6,6 +6,7 @@
 #include <ctime>
 #include <iomanip>
 #include <algorithm>
+#include "../utils/cleanScreen/cleanScreen.h" // Adicionado para usar cleanScreen()
 
 using namespace std; 
 
@@ -26,7 +27,7 @@ void saveScore(const string& nome, int score, float tempo) {
     arq.close();
 }
 
-void drawnRanking() {
+void showRanking() {
     ifstream arq("../utils/scores/scores.txt");
     if (!arq.is_open()) {
         cout << "Sem ranking salvo ainda.\n";
@@ -65,7 +66,7 @@ void drawnRanking() {
         }
     }
 
-    system("cls");
+    cleanScreen(); // Usa a função padronizada para limpar a tela
     cout << "\n====================== RANKING ======================\n";
     cout << left << setw(12) << "Nome" << setw(10) << "Score" << setw(12) << "Data" << setw(8) << "Tempo" << "Resultado\n";
     for (int i = 0; i < min(total, 10); i++) {

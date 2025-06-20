@@ -19,6 +19,11 @@ int explosionEnemyX = 0, explosionEnemyY = 0;
 bool explosionActivePlayer = false;
 int explosionPlayerX = 0, explosionPlayerY = 0;
 std::chrono::high_resolution_clock::time_point explosionStartTime;
+
+// Variáveis globais de estado do jogo definidas em main.cpp
+extern bool gameOver;
+extern bool playerWon;
+extern int vidas;
 // ItemType itemDropType = ItemType::EXTRA_LIFE; // Definition moved to main.cpp
 
 // Power-up state variables (defined in main.cpp, declared extern here)
@@ -157,7 +162,7 @@ void checkEndOfGame() {
     for (int i = 0; i < TOTAL_INITIAL_ENEMIES; i++) {
         if (inimigoVivo[i] && inimigos[i][1] >= ALTURA_MAPA - 1) {
             gameOver = true;
-            std::cout << "Você perdeu! Inimigos invadiram a base.\n";
+            // A mensagem de derrota agora é exibida pela tela de derrota.
             return;
         }
     }
@@ -172,7 +177,8 @@ void checkEndOfGame() {
 
     if (venceu) {
         gameOver = true;
-        std::cout << "Parabéns, você venceu!\n";
+        playerWon = true; // Define que o jogador venceu para exibir a tela correta.
+        // A mensagem de vitória agora é exibida pela tela de vitória.
     }
 }
 

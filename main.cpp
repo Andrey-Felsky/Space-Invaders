@@ -17,6 +17,7 @@
 #include "menu/menu.h"
 #include "ranking/score.h"
 #include "utils/cleanScreen/cleanScreen.h"
+#include "ui/ui.h" // Inclui as novas telas de vitoria/derrota
 #include "utils/constants.h"
 
 using namespace std;
@@ -36,6 +37,7 @@ std::vector<std::pair<int, int>> playerBullets; // {x, y} for each bullet
 
 int score = 0;
 bool gameOver = false;
+bool playerWon = false; // Flag para determinar a tela final
 
 bool tiroInimigoAtivo = false;
 int tiroInimigoX = 0, tiroInimigoY = 0;
@@ -100,7 +102,7 @@ void input() {
 }
 
 void selectShip() {
-    system("cls");
+    cleanScreen();
     cout << "Escolha sua Nave:\n\n";
 
     cout << "1. Nave Agil\n";
@@ -137,11 +139,12 @@ void selectShip() {
             Sleep(1500); // Dá tempo para o usuário ler a mensagem
             break;
     }
-    system("cls");
+    cleanScreen();
 }
 
 void game(){
     gameOver = false;
+    playerWon = false; // Reseta a flag de vitoria
     playerBullets.clear();
     score = 0;
     naveX = LARGURA_MAPA / 2;
@@ -168,7 +171,7 @@ void game(){
 
     initEnemy();
 
-    system("cls");
+    cleanScreen();
     string nome;
     cout << "Digite seu nome: ";
     cin >> nome;
@@ -208,7 +211,7 @@ void game(){
 
 
         if (now - lastFrameTime >= frameDuration) {
-            cleanScreen();
+            resetCursorPosition(); // Usa o reset de cursor para evitar piscar durante o jogo
             render(score, tempoDecorrido, vidas);
             input();
             updatePlayerBullets(); // Updated from updateTire
@@ -237,18 +240,24 @@ void game(){
         while (high_resolution_clock::now() - lastFrameTime < frameDuration) {
         }
     }
-    system("cls");
+
     auto gameEndTime = high_resolution_clock::now();
     duration<float> finalDuration = gameEndTime - gameStartTime;
 
-    resetColor();
-    cout << "\nScore final: " << score << endl;
-
+    // Salva o score antes de exibir a tela final
     saveScore(nome, score, finalDuration.count());
 
-    cout << "\nPressione ENTER para voltar ao menu...";
-    cin.get();
-    system("cls");
+    // Exibe a tela de vitória ou derrota
+    if (playerWon) {
+        showVictoryScreen(score, finalDuration.count());
+    } else {
+        showDefeatScreen(score, finalDuration.count());
+    }
+
+    // Espera por input do usuário antes de voltar ao menu
+    Sleep(1500); // Adiciona uma pausa de 1.5s antes de aceitar input
+    cout << "Pressione qualquer tecla para voltar ao menu...";
+    _getch(); // Usa _getch() para não precisar de ENTER
 }
 
 int main() {
@@ -260,7 +269,7 @@ int main() {
     // Necessário caso haja um caminho no menu que pule a seleção e vá direto para o jogo (improvável com a estrutura atual).
     chosenShipConfig = {ShipType::TYPE_1_FAST_SINGLE, "Nave Agil", "Um tiro por vez, se movimenta muito rapido.", std::chrono::milliseconds(50), 1, "-^-", 10, '\'', false}; // Padrão: Verde Claro, Tiro: '
 
-    while (true) {
+    while (true) { // Loop principal do jogo
         menu(); // Função do menu/menu.h.
                 // Assume-se que se "Jogar" for escolhido, menu() retorna.
                 // Se "Sair" for escolhido, menu() chama exit(0).
