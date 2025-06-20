@@ -39,21 +39,3 @@ void cleanScreen() {
     // Colocar o cursor nas coordenadas iniciais.
     SetConsoleCursorPosition(hConsole, coordScreen);
 }
-
-void resetCursorPosition() {
-    HANDLE hConsole = GetStdHandle(STD_OUTPUT_HANDLE);
-    COORD coord = {0, 0};
-    SetConsoleCursorPosition(hConsole, coord);
-}
-
-void hideCursor() {
-    HANDLE consoleHandle = GetStdHandle(STD_OUTPUT_HANDLE);
-    CONSOLE_CURSOR_INFO info;
-    info.dwSize = 100;
-    info.bVisible = FALSE;
-    SetConsoleCursorInfo(consoleHandle, &info);
-}
-void resetColor() {
-    HANDLE hConsole = GetStdHandle(STD_OUTPUT_HANDLE);
-    SetConsoleTextAttribute(hConsole, 7);
-}

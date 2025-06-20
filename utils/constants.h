@@ -48,6 +48,7 @@ const std::chrono::seconds ENEMY_FREEZE_DURATION(2);
 
 // Difficulty settings
 enum class Difficulty {
+    NONE, // Adicionado para indicar que nenhuma nave foi selecionada
     FACIL,
     NORMAL,
     DIFICIL,

@@ -4,6 +4,7 @@
 #include "../utils/constants.h"
 #include <iostream>
 #include <windows.h>
+#include "../utils/console_utils.h" // Inclui as funções utilitárias de console
 #include <iomanip>
 #include <string>
 #include <sstream>
@@ -33,7 +34,7 @@ void render(int score, float tempo, int currentVidas)
     string scoreStr = ssScore.str();
 
     stringstream ssTempo;
-    ssTempo << fixed << setprecision(1) << tempo << "s";
+    ssTempo << fixed << setprecision(1) << tempo << "s"; // Use fixed and setprecision for consistent float formatting
     string tempoStr = "Tempo: " + ssTempo.str();
 
     int occupiedLength = scoreStr.length() + tempoStr.length();
@@ -41,7 +42,7 @@ void render(int score, float tempo, int currentVidas)
 
     cout << gameIcons.wall;
     SetConsoleTextAttribute(hConsole, 7);
-    cout << scoreStr;
+    cout << scoreStr; // Score string
 
     for (int i = 0; i < padding; ++i)
     {
@@ -49,7 +50,7 @@ void render(int score, float tempo, int currentVidas)
     }
 
     SetConsoleTextAttribute(hConsole, 7);
-    cout << tempoStr;
+    cout << tempoStr; // Time string
 
     cout << gameIcons.wall << "\n";
 
@@ -188,52 +189,52 @@ void render(int score, float tempo, int currentVidas)
             // Lógica de coloração unificada para evitar que uma cor sobrescreva a outra.
             if (isPlayerShipChar)
             {
-                SetConsoleTextAttribute(hConsole, gameIcons.spaceshipColor);
+                setConsoleColor(gameIcons.spaceshipColor);
             }
             else if (c == gameIcons.enemy)
             {
-                SetConsoleTextAttribute(hConsole, gameIcons.enemyColor); // Agora esta cor será aplicada corretamente.
+                setConsoleColor(gameIcons.enemyColor); // Agora esta cor será aplicada corretamente.
             }
             else if (c == chosenShipConfig.bulletChar)
             {
-                SetConsoleTextAttribute(hConsole, chosenShipConfig.bulletColor);
+                setConsoleColor(chosenShipConfig.bulletColor);
             }
             else if (c == '|')
             {
-                SetConsoleTextAttribute(hConsole, 12); // Tiro do inimigo (Vermelho)
+                setConsoleColor(12); // Tiro do inimigo (Vermelho)
             }
             else if (c == 'X' || c == '@')
             {
-                SetConsoleTextAttribute(hConsole, 6); // Explosão (Amarelo escuro/Laranja)
+                setConsoleColor(6); // Explosão (Amarelo escuro/Laranja)
             }
             else if (c == 'L')
             {
-                SetConsoleTextAttribute(hConsole, 10); // Vida (Verde)
+                setConsoleColor(10); // Vida (Verde)
             }
             else if (c == 'S')
             {
-                SetConsoleTextAttribute(hConsole, 14); // Velocidade (Amarelo)
+                setConsoleColor(14); // Velocidade (Amarelo)
             }
             else if (c == '$')
             {
-                SetConsoleTextAttribute(hConsole, 12); // Pontos (Vermelho claro)
+                setConsoleColor(12); // Pontos (Vermelho claro)
             }
             else if (c == 'F')
             {
-                SetConsoleTextAttribute(hConsole, 3); // Freeze (Ciano)
+                setConsoleColor(3); // Freeze (Ciano)
             }
             else if (c == 'E' || c == 'M' || c == '+' || c == '?')
             {
-                SetConsoleTextAttribute(hConsole, 11); // Outros itens (Ciano claro)
+                setConsoleColor(11); // Outros itens (Ciano claro)
             }
             else
             {
-                SetConsoleTextAttribute(hConsole, 7); // Cor padrão para o caminho/fundo
+                setConsoleColor(7); // Cor padrão para o caminho/fundo
             }
 
             cout << c;
         }
-        SetConsoleTextAttribute(hConsole, 7);
+        resetConsoleColor(); // Reseta a cor para o padrão após cada linha
         cout << gameIcons.wall << "\n";
     }
 
@@ -242,14 +243,9 @@ void render(int score, float tempo, int currentVidas)
         cout << gameIcons.wall;
     cout << gameIcons.wall << "\n";
 
-    // Salva a cor padrão para restaurar
-    CONSOLE_SCREEN_BUFFER_INFO consoleInfo;
-    GetConsoleScreenBufferInfo(hConsole, &consoleInfo);
-    WORD originalColors = consoleInfo.wAttributes;
-
     // --- Linha de Status: Itens Ativos ---
     cout << gameIcons.wall;
-    SetConsoleTextAttribute(hConsole, 7); // Cor padrão
+    resetConsoleColor(); // Cor padrão
 
     int line_length = 0;
     stringstream ss; // Usado para construir partes da string
@@ -269,9 +265,9 @@ void render(int score, float tempo, int currentVidas)
         ss << "[Velocidade:" << speed_seconds << "s] ";
         string item_str = ss.str();
 
-        SetConsoleTextAttribute(hConsole, 14); // Amarelo
+        setConsoleColor(14); // Amarelo
         cout << item_str;
-        SetConsoleTextAttribute(hConsole, originalColors); // Restaura cor
+        resetConsoleColor(); // Restaura cor
 
         line_length += item_str.length();
         hasActiveItem = true;
@@ -285,9 +281,9 @@ void render(int score, float tempo, int currentVidas)
         ss << "[Tiro Extra:" << duration_cast<seconds>(extraShotEndTime - now).count() << "s (" << maxPlayerBulletsAllowed << ")] ";
         string item_str = ss.str();
 
-        SetConsoleTextAttribute(hConsole, 11); // Ciano Claro
+        setConsoleColor(11); // Ciano Claro
         cout << item_str;
-        SetConsoleTextAttribute(hConsole, originalColors);
+        resetConsoleColor();
 
         line_length += item_str.length();
         hasActiveItem = true;
@@ -301,9 +297,9 @@ void render(int score, float tempo, int currentVidas)
         ss << "[Tiro Multi:" << duration_cast<seconds>(multiShotEndTime - now).count() << "s] ";
         string item_str = ss.str();
 
-        SetConsoleTextAttribute(hConsole, 13); // Roxo Claro
+        setConsoleColor(13); // Roxo Claro
         cout << item_str;
-        SetConsoleTextAttribute(hConsole, originalColors);
+        resetConsoleColor();
 
         line_length += item_str.length();
         hasActiveItem = true;
@@ -316,9 +312,9 @@ void render(int score, float tempo, int currentVidas)
         ss << "[Congelado:" << freeze_seconds << "s] ";
         string item_str = ss.str();
 
-        SetConsoleTextAttribute(hConsole, 9); // Azul Claro
+        setConsoleColor(9); // Azul Claro
         cout << item_str;
-        SetConsoleTextAttribute(hConsole, originalColors);
+        resetConsoleColor();
 
         line_length += item_str.length();
         hasActiveItem = true;
@@ -341,7 +337,7 @@ void render(int score, float tempo, int currentVidas)
 
     // --- Linha de Status: Vidas ---
     cout << gameIcons.wall;
-    SetConsoleTextAttribute(hConsole, 7); // Cor padrão
+    resetConsoleColor(); // Cor padrão
 
     line_length = 0; // Reseta o contador para a nova linha
 
@@ -352,12 +348,12 @@ void render(int score, float tempo, int currentVidas)
     string life_symbol = string(1, char(254)) + " "; // "■ "
     line_length += currentVidas * life_symbol.length();
 
-    SetConsoleTextAttribute(hConsole, 12); // Vermelho claro para vidas
+    setConsoleColor(12); // Vermelho claro para vidas
     for (int i = 0; i < currentVidas; ++i)
     {
         cout << life_symbol;
     }
-    SetConsoleTextAttribute(hConsole, originalColors); // Restaura cor
+    resetConsoleColor(); // Restaura cor
 
     // Calcula e imprime o preenchimento para a linha de vidas
     padding = LARGURA_MAPA - line_length;
@@ -372,5 +368,5 @@ void render(int score, float tempo, int currentVidas)
         cout << gameIcons.wall;
     cout << gameIcons.wall << "\n";
 
-    SetConsoleTextAttribute(hConsole, 7);
+    resetConsoleColor();
 }

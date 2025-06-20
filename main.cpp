@@ -10,6 +10,7 @@
 #include <vector>
 #include <string> // Adicionado para std::string em ShipConfig
 #include <limits> // Adicionado para std::numeric_limits em selectShip
+#include <iomanip> // Adicionado para std::setw e std::left
 
 #include "mapa/mapa.h"
 #include "enemy/enemy.h"
@@ -19,6 +20,7 @@
 #include "utils/cleanScreen/cleanScreen.h"
 #include "ui/ui.h" // Inclui as novas telas de vitoria/derrota
 #include "utils/constants.h"
+#include "utils/console_utils.h"
 
 using namespace std;
 using namespace std::chrono;
@@ -70,9 +72,6 @@ std::chrono::high_resolution_clock::time_point lastPlayerMoveTime; // Para contr
 
 const int FPS = 30;
 const std::chrono::milliseconds frameDuration(1000 / FPS);
-
-// Protótipo da função de IA para que a função game() possa encontrá-la.
-void autoPlayInput();
 
 void autoPlayInput() {
     auto now = high_resolution_clock::now();
@@ -175,45 +174,127 @@ void input() {
     }
 }
 
+// Função auxiliar para imprimir texto centralizado dentro de uma largura específica
+void printCentered(const std::string& text, int width) {
+    int padding_left = (width - text.length()) / 2;
+    if (padding_left < 0) padding_left = 0;
+    int padding_right = width - text.length() - padding_left;
+    if (padding_right < 0) padding_right = 0;
+    std::cout << std::string(padding_left, ' ') << text << std::string(padding_right, ' ');
+}
+
 void selectShip() {
-    cleanScreen();
-    cout << "Escolha sua Nave:\n\n";
+    hideCursor();
 
-    cout << "1. Nave Agil\n";
-    cout << "   - Descricao: Um tiro por vez, se movimenta muito rapido.\n";
-    cout << "   - Atributos: Movimento Rapido (50ms cooldown), 1 Tiro Max, Sem Tiro Multiplo.\n\n";
+    // Definir as configurações das naves
+    const std::vector<ShipConfig> shipOptions = {
+        {ShipType::TYPE_1_FAST_SINGLE, "Nave Agil", "Um tiro por vez, se movimenta muito rapido.", std::chrono::milliseconds(50), 1, "-^-", 10, '\'', false},
+        {ShipType::TYPE_2_BALANCED_EXTRA, "Nave Tática", "Um pouco mais lenta, mas com capacidade para Tiro Extra.", std::chrono::milliseconds(100), 2, "-O-", 11, '*', false},
+        {ShipType::TYPE_3_BALANCED_MULTI, "Nave Destruidora", "Um pouco mais lenta, mas dispara um Tiro Multiplo.", std::chrono::milliseconds(100), 1, "-W-", 14, 'o', true}
+    };
 
-    cout << "2. Nave Tática\n";
-    cout << "   - Descricao: Um pouco mais lenta, mas com capacidade para Tiro Extra.\n";
-    cout << "   - Atributos: Movimento Normal (100ms cooldown), 2 Tiros Max, Sem Tiro Multiplo.\n\n";
+    int selected_option = 0;
+    int prev_selected_option = -1; // Para detectar mudança na seleção
+    char key;
 
-    cout << "3. Nave Destruidora\n";
-    cout << "   - Descricao: Um pouco mais lenta, mas dispara um Tiro Multiplo.\n";
-    cout << "   - Atributos: Movimento Normal (100ms cooldown), 1 Rajada Max, Tiro Multiplo Ativo.\n\n";
+    const int menuWidth = 58; // Largura da moldura do menu
+    // Centraliza a moldura na tela (assumindo uma tela de 80 colunas)
+    const int menuStartX = (80 - menuWidth) / 2;
 
-    cout << "Escolha (1-3): ";
+    while (true) {
+        // Redesenha apenas se a seleção mudou
+        if (selected_option != prev_selected_option) {
+            const ShipConfig& currentShip = shipOptions[selected_option];
+            cleanScreen();
 
-    char choice_char;
-    cin >> choice_char;
-    cin.ignore(std::numeric_limits<std::streamsize>::max(), '\n'); // Limpa o buffer de entrada
+            // --- Desenha a Moldura Superior e o Título ---
+            setCursorPosition(menuStartX, 2);
+            std::cout << (char)201 << std::string(menuWidth, (char)205) << (char)187;
+            setCursorPosition(menuStartX, 3);
+            std::cout << (char)186;
+            printCentered("SELECIONE SUA NAVE", menuWidth);
+            std::cout << (char)186;
+            setCursorPosition(menuStartX, 4);
+            std::cout << (char)186 << std::string(menuWidth, ' ') << (char)186;
 
-    switch (choice_char) {
-        case '1':
-            chosenShipConfig = {ShipType::TYPE_1_FAST_SINGLE, "Nave Agil", "Um tiro por vez, se movimenta muito rapido.", std::chrono::milliseconds(50), 1, "-^-", 10, '\'', false}; // 10: Verde Claro, Tiro: '
-            break;
-        case '2':
-            chosenShipConfig = {ShipType::TYPE_2_BALANCED_EXTRA, "Nave Tática", "Tiro Extra (2 balas na tela).", std::chrono::milliseconds(100), 2, "-O-", 11, '*', false}; // 11: Ciano Claro, Tiro: *
-            break;
-        case '3':
-            chosenShipConfig = {ShipType::TYPE_3_BALANCED_MULTI, "Nave Destruidora", "Tiro Multiplo.", std::chrono::milliseconds(100), 1, "-W-", 14, 'o', true}; // 14: Amarelo Claro, Tiro: o
-            break;
-        default:
-            cout << "Escolha invalida. Usando Nave Agil por padrao.\n";
-            chosenShipConfig = {ShipType::TYPE_1_FAST_SINGLE, "Nave Agil", "Um tiro por vez, se movimenta muito rapido.", std::chrono::milliseconds(50), 1, "-^-", 10, '\'', false}; // Padrão: Verde Claro, Tiro: '
-            Sleep(1500); // Dá tempo para o usuário ler a mensagem
-            break;
+            // --- Desenha a Pré-visualização da Nave ---
+            setCursorPosition(menuStartX, 5);
+            std::cout << (char)186;
+            setConsoleColor(currentShip.bulletColor);
+            printCentered(currentShip.skin, menuWidth);
+            resetConsoleColor();
+            std::cout << (char)186;
+            setCursorPosition(menuStartX, 6);
+            std::cout << (char)186;
+            setConsoleColor(currentShip.bulletColor);
+            printCentered(std::string(1, currentShip.bulletChar), menuWidth);
+            resetConsoleColor();
+            std::cout << (char)186;
+            setCursorPosition(menuStartX, 7);
+            std::cout << (char)186 << std::string(menuWidth, ' ') << (char)186;
+
+            // --- Desenha as Opções de Naves ---
+            for (size_t i = 0; i < shipOptions.size(); ++i) {
+                setCursorPosition(menuStartX, 8 + i);
+                std::cout << (char)186;
+                if (i == (size_t)selected_option) {
+                    setConsoleColor(14); // Amarelo para selecionado
+                    printCentered("> " + shipOptions[i].name + " <", menuWidth);
+                } else {
+                    resetConsoleColor(); // Branco para outros
+                    printCentered(shipOptions[i].name, menuWidth);
+                }
+                resetConsoleColor();
+                std::cout << (char)186;
+            }
+            setCursorPosition(menuStartX, 8 + shipOptions.size());
+            std::cout << (char)186 << std::string(menuWidth, ' ') << (char)186;
+
+            // --- Desenha a Moldura Inferior com a Descrição ---
+            setCursorPosition(menuStartX, 9 + shipOptions.size());
+            std::cout << (char)204 << std::string(menuWidth, (char)205) << (char)185;
+            setCursorPosition(menuStartX, 10 + shipOptions.size());
+            std::cout << (char)186 << std::string(menuWidth, ' ') << (char)186;
+            setCursorPosition(menuStartX, 11 + shipOptions.size());
+            std::cout << (char)186 << " "; setConsoleColor(11); std::cout << std::left << std::setw(menuWidth - 2) << currentShip.description; resetConsoleColor(); std::cout << (char)186;
+            setCursorPosition(menuStartX, 12 + shipOptions.size());
+            std::string attributes = std::string("Atributos: Movimento ") + (currentShip.moveCooldown.count() == 50 ? "Rapido" : "Normal") + " (" + std::to_string(currentShip.moveCooldown.count()) + "ms), " + (currentShip.initialMultiShotActive ? "Tiro Multiplo" : std::to_string(currentShip.initialMaxBullets) + " Tiro Max");
+            std::cout << (char)186 << " "; setConsoleColor(11); std::cout << std::left << std::setw(menuWidth - 2) << attributes; resetConsoleColor(); std::cout << (char)186;
+            setCursorPosition(menuStartX, 13 + shipOptions.size());
+            std::cout << (char)186 << std::string(menuWidth, ' ') << (char)186;
+            setCursorPosition(menuStartX, 14 + shipOptions.size());
+            std::cout << (char)200 << std::string(menuWidth, (char)205) << (char)188;
+
+            // --- Desenha as Instruções ---
+            setCursorPosition(menuStartX, 16 + shipOptions.size());
+            std::cout << "Use as setas para navegar e ENTER para confirmar.";
+
+            prev_selected_option = selected_option;
+        }
+
+        // Input handling
+        if (_kbhit()) {
+            key = _getch();
+            if (key == 0 || key == -32) { // Arrow keys
+                key = _getch(); // Get the second byte
+                if (key == 72) { // Up arrow
+                    selected_option = (selected_option == 0) ? shipOptions.size() - 1 : selected_option - 1;
+                } else if (key == 80) { // Down arrow
+                    selected_option = (selected_option + 1) % shipOptions.size();
+                }
+            } else if (key == 13) { // Enter key
+                chosenShipConfig = shipOptions[selected_option];
+                cleanScreen();
+                return; // Exit ship selection
+            } else if (key == 27) { // ESC key
+                chosenShipConfig = {ShipType::NONE, "", "", std::chrono::milliseconds(0), 0, "", 0, ' ', false}; // Set to NONE
+                cleanScreen();
+                return; 
+            }
+        }
+        // Small delay to prevent high CPU usage
+        Sleep(1);
     }
-    cleanScreen();
 }
 
 void game(){
@@ -366,12 +447,11 @@ void game(){
 
 int main() {
     srand(time(NULL));
-    system("cls");
     hideCursor(); // Garante que o cursor está escondido
 
     // Inicializa com uma nave padrão. selectShip() irá sobrescrever isso.
-    // Necessário caso haja um caminho no menu que pule a seleção e vá direto para o jogo (improvável com a estrutura atual).
-    chosenShipConfig = {ShipType::TYPE_1_FAST_SINGLE, "Nave Agil", "Um tiro por vez, se movimenta muito rapido.", std::chrono::milliseconds(50), 1, "-^-", 10, '\'', false}; // Padrão: Verde Claro, Tiro: '
+    // Inicializa com NONE para indicar que nenhuma nave foi selecionada ainda.
+    chosenShipConfig = {ShipType::NONE, "", "", std::chrono::milliseconds(0), 0, "", 0, ' ', false};
 
     while (true) { // Loop principal do jogo
         menu(); // Função do menu/menu.h.
@@ -379,7 +459,10 @@ int main() {
                 // Se "Sair" for escolhido, menu() chama exit(0).
 
         selectShip(); // Chama a seleção de nave APÓS o menu principal e ANTES do jogo.
-        game();       // Inicia o jogo com a nave escolhida.
+        if (chosenShipConfig.type != ShipType::NONE) { // Verifica se uma nave foi realmente selecionada (não ESC)
+            game();       // Inicia o jogo com a nave escolhida.
+        }
+        // Se ESC foi pressionado em selectShip(), o loop volta para o menu principal.
     }
 
     return 0; // Inalcançável se menu() trata a saída.

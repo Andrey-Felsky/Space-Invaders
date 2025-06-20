@@ -7,6 +7,7 @@
 #include <iomanip>
 #include <algorithm>
 #include "../utils/cleanScreen/cleanScreen.h" // Adicionado para usar cleanScreen()
+#include "../utils/console_utils.h"
 
 using namespace std;
 
@@ -75,19 +76,20 @@ void showRanking()
     }
 
     cleanScreen(); // Usa a função padronizada para limpar a tela
-    SetConsoleTextAttribute(GetStdHandle(STD_OUTPUT_HANDLE), 10);
+    setConsoleColor(10);
     cout << "\n====================== RANKING ======================\n";
-    SetConsoleTextAttribute(GetStdHandle(STD_OUTPUT_HANDLE), 15);
+    setConsoleColor(15);
     cout << left << setw(12) << "Nome" << setw(10) << "Score" << setw(12) << "Data" << setw(8) << "Tempo" << "Resultado\n";
     for (int i = 0; i < min(total, 10); i++)
     {
+        setConsoleColor(7); // Cor padrão para as linhas
         cout << left << setw(12) << registros[i].nome
              << setw(10) << registros[i].score
              << setw(12) << registros[i].data
              << setw(8) << fixed << setprecision(1) << registros[i].tempo
              << registros[i].resultado << "\n";
     }
-    SetConsoleTextAttribute(GetStdHandle(STD_OUTPUT_HANDLE), 10);
+    setConsoleColor(10);
     cout << "=====================================================\n";
-    SetConsoleTextAttribute(GetStdHandle(STD_OUTPUT_HANDLE), 15);
+    resetConsoleColor();
 }

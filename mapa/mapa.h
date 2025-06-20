@@ -21,6 +21,7 @@ extern int naveX;
 // Estas definições DEVEM ser idênticas às de main.cpp
 enum class ShipType
 {
+    NONE,
     TYPE_1_FAST_SINGLE,
     TYPE_2_BALANCED_EXTRA,
     TYPE_3_BALANCED_MULTI

@@ -2,29 +2,14 @@
 #include <iostream>
 #include <windows.h>
 #include <conio.h>
-#include <vector>
-#include <string>
+#include <chrono> // Necessário para std::chrono::high_resolution_clock
+#include <thread> // Necessário para std::this_thread::sleep_for
+#include <vector> // Necessário para std::vector
+#include <string> // Necessário para std::string
 #include "../ranking/score.h"
 #include "../utils/cleanScreen/cleanScreen.h"
 #include "../utils/constants.h" // Para a enum Difficulty
-
-// Variável global de dificuldade definida em main.cpp
-extern Difficulty currentDifficulty;
-
-// Função auxiliar para posicionar o cursor
-void setCursorPosition(int x, int y)
-{
-    COORD coord;
-    coord.X = x;
-    coord.Y = y;
-    SetConsoleCursorPosition(GetStdHandle(STD_OUTPUT_HANDLE), coord);
-}
-
-// Função auxiliar para definir a cor do console
-void setMenuColor(int color)
-{
-    SetConsoleTextAttribute(GetStdHandle(STD_OUTPUT_HANDLE), color);
-}
+#include "../utils/console_utils.h" // Inclui as funções utilitárias de console
 
 void printMenuTitle(int shinePosition)
 {
@@ -50,11 +35,11 @@ void printMenuTitle(int shinePosition)
             // Se o caractere atual estiver na área do brilho, muda a cor
             if (j >= shinePosition && j < shinePosition + shineWidth)
             {
-                setMenuColor(shineColor);
+                setConsoleColor(shineColor);
             }
             else
             {
-                setMenuColor(baseColor);
+                setConsoleColor(baseColor);
             }
             std::cout << titleLines[i][j];
         }
@@ -63,24 +48,14 @@ void printMenuTitle(int shinePosition)
     std::cout << "\n";
 }
 
-void printMenuItem(const std::string &text, bool selected)
-{
-    if (selected)
-    {
-        setMenuColor(14); // Amarelo
-        std::cout << "                > " << text << " <\n";
-    }
-    else
-    {
-        setMenuColor(7); // Branco
-        std::cout << "                  " << text << "  \n";
-    }
-}
+// Variável global de dificuldade definida em main.cpp
+extern Difficulty currentDifficulty;
+
 
 void exibirInstrucoes()
 {
     cleanScreen();
-    setMenuColor(7);
+    setConsoleColor(7);
     std::cout << "\n\n";
     std::cout << "   === INSTRUCOES ===\n\n";
     std::cout << "   - Use as teclas 'A' e 'D' para mover a nave.\n";
@@ -116,7 +91,7 @@ void selectDifficulty()
     while (true)
     {
         cleanScreen();
-        setMenuColor(7);
+        setConsoleColor(7);
         std::cout << "\n\n   === SELECIONE A DIFICULDADE ===\n\n";
 
         for (size_t i = 0; i < difficultyOptions.size(); ++i)
@@ -124,7 +99,7 @@ void selectDifficulty()
             // Imprime o cursor de seleção (amarelo > <)
             if (i == selected_option)
             {
-                setMenuColor(14); // Yellow
+                setConsoleColor(14); // Yellow
                 std::cout << "                > ";
             }
             else {
@@ -134,17 +109,17 @@ void selectDifficulty()
             // Imprime o texto da opção, colorindo a que está ativa em verde
             if (difficultyOptions[i].second == currentDifficulty)
             {
-                setMenuColor(10); // Green
+                setConsoleColor(10); // Green
             }
             else {
-                setMenuColor(7); // White
+                setConsoleColor(7); // White
             }
             std::cout << difficultyOptions[i].first;
 
             // Imprime o cursor de seleção
             if (i == selected_option)
             {
-                setMenuColor(14); // Yellow
+                setConsoleColor(14); // Yellow
                 std::cout << " <\n";
             }
             else {
@@ -152,7 +127,7 @@ void selectDifficulty()
             }
         }
 
-        setMenuColor(7);
+        setConsoleColor(7);
         std::cout << "\n\n   Use as setas para navegar e ENTER para confirmar.";
         std::cout << "\n   Pressione ESC para voltar ao menu.";
 
@@ -179,7 +154,7 @@ void selectDifficulty()
 
 void menu()
 {
-    hideCursor();
+    hideCursor(); // Usa a função de console_utils.h
     std::vector<std::string> options = {"Jogar", "Dificuldade", "Instrucoes", "Ranking", "Sair"};
     int selected_option = 0;
     int prev_selected_option = -1; // Para detectar mudança na seleção
@@ -228,7 +203,7 @@ void menu()
             for (size_t i = 0; i < options.size(); ++i) {
                 printMenuItem(options[i], i == selected_option);
             }
-            resetColor();
+            resetConsoleColor(); // Usa a função de console_utils.h
             redrawOptions = false;
         }
 
@@ -276,7 +251,7 @@ void menu()
                     break;
                 case 4: // Sair
                     cleanScreen();
-                    setMenuColor(7); // Define a cor para branco
+                    setConsoleColor(7); // Define a cor para branco
                     const std::vector<std::string> gameOverLines = {
                         "::::::::::: :::    :::     :::     ::::    ::: :::    ::: ::::::::  ",
                         "    :+:     :+:    :+:   :+: :+:   :+:+:   :+: :+:   :+: :+:    :+: ",
