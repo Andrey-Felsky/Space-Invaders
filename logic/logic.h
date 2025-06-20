@@ -6,6 +6,14 @@
 #include <utility> // Required for std::pair
 #include "../utils/constants.h"
 
+// --- Barrier Definitions ---
+struct Barrier {
+    int x, y;
+    char shape[BARRIER_HEIGHT][BARRIER_WIDTH];
+};
+extern Barrier barriers[NUM_BARRIERS];
+// --- End Barrier Definitions ---
+
 extern std::vector<std::pair<int, int>> playerBullets;
 extern bool inimigoVivo[ENEMY_ARRAY_MAX_SIZE];
 extern int inimigos[ENEMY_ARRAY_MAX_SIZE][2];
@@ -40,6 +48,7 @@ extern std::chrono::high_resolution_clock::time_point speedBoostEndTime;
 extern std::chrono::high_resolution_clock::time_point extraShotEndTime;
 extern std::chrono::high_resolution_clock::time_point multiShotEndTime;
 extern std::chrono::high_resolution_clock::time_point enemyFreezeEndTime;
+extern std::chrono::high_resolution_clock::time_point lastEnemyShotTime; // Para controlar o tiro inimigo
 extern std::chrono::milliseconds originalEnemyMoveIntervalMs;
  
 void updatePlayerBullets(); // Renamed from updateTire

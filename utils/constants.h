@@ -15,6 +15,11 @@ const int TOTAL_INITIAL_ENEMIES = NUM_ENEMY_COLS_INIT * NUM_ENEMY_ROWS_INIT;
 
 const int ENEMY_ARRAY_MAX_SIZE = 25;
 
+// Barrier constants
+const int NUM_BARRIERS = 3;  // Número de barreiras
+const int BARRIER_WIDTH = 1; // Largura de cada segmento de barreira (1 caractere)
+const int BARRIER_HEIGHT = 1; // Altura de cada segmento de barreira (1 caractere)
+
 const std::chrono::milliseconds EXPLOSION_DURATION(100);
 
 const std::chrono::milliseconds ITEM_MOVE_INTERVAL(100);
@@ -65,5 +70,6 @@ const DWORD ENEMY_EXPLOSION_FREQ = 200; // Hz (frequência mais baixa para inimi
 const DWORD ENEMY_EXPLOSION_DUR = 100; // ms
 const DWORD PLAYER_EXPLOSION_FREQ = 100; // Hz (frequência ainda mais baixa para jogador)
 const DWORD PLAYER_EXPLOSION_DUR = 200; // ms
+const std::chrono::milliseconds ENEMY_SHOT_INTERVAL(800); // Intervalo entre tiros inimigos
 
 #endif

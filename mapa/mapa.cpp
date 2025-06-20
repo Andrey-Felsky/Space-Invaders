@@ -68,6 +68,22 @@ void render(int score, float tempo, int currentVidas)
         }
     }
 
+    // Desenha as barreiras no mapa
+    for (int i = 0; i < NUM_BARRIERS; ++i) {
+        for (int r = 0; r < BARRIER_HEIGHT; ++r) {
+            for (int c = 0; c < BARRIER_WIDTH; ++c) {
+                // Só desenha a parte da barreira que não foi destruída (' ') ou que não é nula
+                if (barriers[i].shape[r][c] != ' ' && barriers[i].shape[r][c] != '\0') {
+                    int mapX = barriers[i].x + c;
+                    int mapY = barriers[i].y + r;
+                    if (mapY >= 0 && mapY < ALTURA_MAPA && mapX >= 0 && mapX < LARGURA_MAPA) {
+                        mapa[mapY][mapX] = barriers[i].shape[r][c];
+                    }
+                }
+            }
+        }
+    }
+
     for (int i = 0; i < TOTAL_INITIAL_ENEMIES; i++)
     {
         if (inimigoVivo[i])
@@ -185,6 +201,10 @@ void render(int score, float tempo, int currentVidas)
             else if (c == 'X' || c == '@')
             {
                 setConsoleColor(6); // Explosão (Amarelo escuro/Laranja)
+            }
+            else if (c == (char)219) // Caractere da barreira
+            {
+                setConsoleColor(10); // Verde para as barreiras
             }
             else if (c == 'L')
             {

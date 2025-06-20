@@ -28,6 +28,9 @@ using namespace std::chrono;
 // As definições de ShipType e ShipConfig agora vêm de "mapa/mapa.h"
 // que é incluído acima.
 
+// Barrier state
+// Barrier barriers[NUM_BARRIERS]; // Declarado em logic.h e definido em logic.cpp
+
 ShipConfig chosenShipConfig; // Guarda a configuração da nave selecionada pelo jogador
 
 Difficulty currentDifficulty = Difficulty::NORMAL; // Dificuldade padrão
@@ -315,6 +318,22 @@ void selectShip() {
     }
 }
 
+void initBarriers() {
+    // Posiciona as barreiras de forma espaçada no mapa
+    int barrierY = ALTURA_MAPA - 5;
+    // Calcula o espaçamento para que as barreiras fiquem centralizadas
+    const int GAP_BETWEEN_BARRIERS = 5; // Espaço fixo entre as barreiras
+    int totalBarriersAndSpacing = NUM_BARRIERS * BARRIER_WIDTH + (NUM_BARRIERS - 1) * GAP_BETWEEN_BARRIERS;
+    int startX = (LARGURA_MAPA - totalBarriersAndSpacing) / 2;
+
+    for (int i = 0; i < NUM_BARRIERS; ++i) {
+        barriers[i].x = startX + i * (BARRIER_WIDTH + GAP_BETWEEN_BARRIERS);
+        barriers[i].y = barrierY;
+        // Preenche a forma da barreira com um caractere sólido
+        std::fill(&barriers[i].shape[0][0], &barriers[i].shape[0][0] + sizeof(barriers[i].shape), char(219));
+    }
+}
+
 void game(){
     gameOver = false;
     playerWon = false; // Reseta a flag de vitoria
@@ -363,6 +382,7 @@ void game(){
     enemyFreezeEndTime = now_for_init;
 
     initEnemy();
+    initBarriers();
 
     cleanScreen();
     string nome = "Robo-Player";
@@ -377,7 +397,6 @@ void game(){
     auto gameStartTime = high_resolution_clock::now();
     auto lastFrameTime = high_resolution_clock::now();
     auto lastEnemyMoveTime = high_resolution_clock::now();
-    auto lastEnemyShotTime = high_resolution_clock::now();
     auto lastItemDropMoveTime = high_resolution_clock::now();
 
     const std::chrono::milliseconds enemyShotInterval(800);
@@ -431,11 +450,6 @@ void game(){
             // moveEnemies will check for freeze internally
             moveEnemies(); 
             lastEnemyMoveTime = now;
-        }
-
-        if (!tiroInimigoAtivo && now - lastEnemyShotTime >= enemyShotInterval) {
-            updateTiroInimigo();
-            lastEnemyShotTime = now;
         }
 
         if (itemDropActive && now - lastItemDropMoveTime >= ITEM_MOVE_INTERVAL) {

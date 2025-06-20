@@ -5,6 +5,12 @@
 #include <cstdlib> // For rand()
 #include <algorithm> // For std::min, std::remove_if
 
+// Global variable definitions (declared in logic.h)
+std::chrono::high_resolution_clock::time_point lastEnemyShotTime;
+
+// Definition of global barrier array
+Barrier barriers[NUM_BARRIERS];
+
 // --- Placeholder implementations for functions declared in logic.h ---
 // You should replace these with your actual implementations if they exist.
 void updatePlayerBullets() {
@@ -16,10 +22,32 @@ void updatePlayerBullets() {
                         playerBullets.end());
 }
 void updateTiroInimigo() {
+    auto now = std::chrono::high_resolution_clock::now();
+
+    // 1. Move existing bullet
     if (tiroInimigoAtivo) {
         tiroInimigoY++;
         if (tiroInimigoY >= ALTURA_MAPA) {
             tiroInimigoAtivo = false;
+        }
+    }
+
+    // 2. Fire new bullet if conditions met
+    if (!tiroInimigoAtivo && (now - lastEnemyShotTime >= ENEMY_SHOT_INTERVAL)) {
+        // Find a random active enemy to shoot from
+        std::vector<int> activeEnemiesIndices;
+        for (int i = 0; i < TOTAL_INITIAL_ENEMIES; ++i) {
+            if (inimigoVivo[i]) {
+                activeEnemiesIndices.push_back(i);
+            }
+        }
+
+        if (!activeEnemiesIndices.empty()) {
+            int shooterIndex = activeEnemiesIndices[rand() % activeEnemiesIndices.size()];
+            tiroInimigoX = inimigos[shooterIndex][0];
+            tiroInimigoY = inimigos[shooterIndex][1] + 1; // Start just below the enemy
+            tiroInimigoAtivo = true;
+            lastEnemyShotTime = now; // Update shot time here
         }
     }
 }
@@ -66,11 +94,36 @@ void checkEndOfGame() {
 void checkCollisions() {
     auto now = std::chrono::high_resolution_clock::now();
 
-    // Player bullet vs Enemy
+    // --- Colisões de Tiros do Jogador ---
     for (auto itBullet = playerBullets.begin(); itBullet != playerBullets.end(); ) {
-        bool bulletHit = false;
+        bool bulletHitSomething = false;
+        int bulletX = itBullet->first;
+        int bulletY = itBullet->second;
+
+        // 1. Checar colisão com Barreiras
+        for (int i = 0; i < NUM_BARRIERS; ++i) {
+            if (bulletX >= barriers[i].x && bulletX < barriers[i].x + BARRIER_WIDTH &&
+                bulletY >= barriers[i].y && bulletY < barriers[i].y + BARRIER_HEIGHT) {
+                
+                int barrierCol = bulletX - barriers[i].x;
+                int barrierRow = bulletY - barriers[i].y;
+
+                if (barriers[i].shape[barrierRow][barrierCol] != ' ') {
+                    barriers[i].shape[barrierRow][barrierCol] = ' '; // Danifica a barreira
+                    bulletHitSomething = true;
+                    break; // A bala só pode atingir uma barreira
+                }
+            }
+        }
+
+        if (bulletHitSomething) {
+            itBullet = playerBullets.erase(itBullet);
+            continue; // Pula para a próxima bala
+        }
+
+        // 2. Checar colisão com Inimigos (se não atingiu uma barreira)
         for (int i = 0; i < TOTAL_INITIAL_ENEMIES; ++i) {
-            if (inimigoVivo[i] && itBullet->first == inimigos[i][0] && itBullet->second == inimigos[i][1]) {
+            if (inimigoVivo[i] && bulletX == inimigos[i][0] && bulletY == inimigos[i][1]) {
                 inimigoVivo[i] = false;
                 score += 10;
                 enemiesDefeatedCount++;
@@ -79,43 +132,100 @@ void checkCollisions() {
                 explosionEnemyX = inimigos[i][0];
                 explosionEnemyY = inimigos[i][1];
                 enemyExplosionStartTime = now;
-                Beep(ENEMY_EXPLOSION_FREQ, ENEMY_EXPLOSION_DUR); // Som de explosão de inimigo
+                Beep(ENEMY_EXPLOSION_FREQ, ENEMY_EXPLOSION_DUR);
 
                 if (rand() % 100 < currentItemDropChance) {
                     itemDropActive = true;
                     itemDropX = inimigos[i][0];
                     itemDropY = inimigos[i][1];
-                    itemDropType = static_cast<ItemType>(rand() % 6); // Random item type
+                    itemDropType = static_cast<ItemType>(rand() % 6);
                 }
 
-                bulletHit = true;
-                break;
+                bulletHitSomething = true;
+                break; // A bala só pode atingir um inimigo
             }
         }
-        if (bulletHit) {
+
+        if (bulletHitSomething) {
             itBullet = playerBullets.erase(itBullet);
         } else {
-            ++itBullet;
+            ++itBullet; // Avança apenas se nada foi atingido
         }
     }
 
-    // Enemy bullet vs Player
-    if (tiroInimigoAtivo && tiroInimigoY == ALTURA_MAPA - 1 && tiroInimigoX == naveX) {
-        vidas--;
-        tiroInimigoAtivo = false;
+    // --- Colisões de Tiros do Inimigo ---
+    if (tiroInimigoAtivo) {
+        bool enemyBulletHitSomething = false;
 
-        explosionActivePlayer = true;
-        explosionPlayerX = naveX;
-        explosionPlayerY = ALTURA_MAPA - 1;
-        playerExplosionStartTime = now;
-        Beep(PLAYER_EXPLOSION_FREQ, PLAYER_EXPLOSION_DUR); // Som de explosão do jogador
+        // 1. Checar colisão com Barreiras
+        for (int i = 0; i < NUM_BARRIERS; ++i) {
+            if (tiroInimigoX >= barriers[i].x && tiroInimigoX < barriers[i].x + BARRIER_WIDTH &&
+                tiroInimigoY >= barriers[i].y && tiroInimigoY < barriers[i].y + BARRIER_HEIGHT) {
+                
+                int barrierCol = tiroInimigoX - barriers[i].x;
+                int barrierRow = tiroInimigoY - barriers[i].y;
 
-        if (vidas <= 0) {
-            gameOver = true;
+                if (barriers[i].shape[barrierRow][barrierCol] != ' ') {
+                    barriers[i].shape[barrierRow][barrierCol] = ' '; // Danifica a barreira
+                    enemyBulletHitSomething = true;
+                    break;
+                }
+            }
+        }
+
+        // 2. Checar colisão com o Jogador (se não atingiu uma barreira)
+        if (!enemyBulletHitSomething && tiroInimigoY == ALTURA_MAPA - 1 && tiroInimigoX >= naveX - 1 && tiroInimigoX <= naveX + 1) { // Checa uma área maior para a nave
+            vidas--;
+            enemyBulletHitSomething = true;
+
+            explosionActivePlayer = true;
+            explosionPlayerX = naveX;
+            explosionPlayerY = ALTURA_MAPA - 1;
+            playerExplosionStartTime = now;
+            Beep(PLAYER_EXPLOSION_FREQ, PLAYER_EXPLOSION_DUR);
+
+            if (vidas <= 0) {
+                gameOver = true;
+            }
+        }
+
+        if (enemyBulletHitSomething) {
+            tiroInimigoAtivo = false;
         }
     }
 
-    // Player vs Item Drop
+    // --- Colisões de Inimigos com Barreiras ---
+    for (int i = 0; i < TOTAL_INITIAL_ENEMIES; ++i) {
+        if (inimigoVivo[i]) {
+            int enemyX = inimigos[i][0];
+            int enemyY = inimigos[i][1];
+
+            for (int b = 0; b < NUM_BARRIERS; ++b) {
+                // Checa se a posição do inimigo se sobrepõe à caixa delimitadora da barreira
+                if (enemyX >= barriers[b].x && enemyX < barriers[b].x + BARRIER_WIDTH &&
+                    enemyY >= barriers[b].y && enemyY < barriers[b].y + BARRIER_HEIGHT) {
+
+                    int barrierCol = enemyX - barriers[b].x;
+                    int barrierRow = enemyY - barriers[b].y;
+
+                    // Checa se o segmento específico da barreira ainda está intacto
+                    if (barriers[b].shape[barrierRow][barrierCol] != ' ') {
+                        // Colisão detectada!
+                        inimigoVivo[i] = false; // Destrói o inimigo
+                        barriers[b].shape[barrierRow][barrierCol] = ' '; // Destrói o segmento da barreira
+
+                        explosionActiveEnemy = true; // Ativa a explosão do inimigo
+                        explosionEnemyX = enemyX; explosionEnemyY = enemyY;
+                        enemyExplosionStartTime = now;
+                        Beep(ENEMY_EXPLOSION_FREQ, ENEMY_EXPLOSION_DUR);
+                        break; // Inimigo destruído, passa para o próximo inimigo
+                    }
+                }
+            }
+        }
+    }
+
+    // --- Colisão do Jogador com Itens ---
     if (itemDropActive && itemDropY == ALTURA_MAPA - 1 && itemDropX == naveX) {
         // Apply item effect
         switch (itemDropType) {
