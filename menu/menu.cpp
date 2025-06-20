@@ -11,26 +11,56 @@
 // Variável global de dificuldade definida em main.cpp
 extern Difficulty currentDifficulty;
 
+// Função auxiliar para posicionar o cursor
+void setCursorPosition(int x, int y)
+{
+    COORD coord;
+    coord.X = x;
+    coord.Y = y;
+    SetConsoleCursorPosition(GetStdHandle(STD_OUTPUT_HANDLE), coord);
+}
+
 // Função auxiliar para definir a cor do console
 void setMenuColor(int color)
 {
     SetConsoleTextAttribute(GetStdHandle(STD_OUTPUT_HANDLE), color);
 }
 
-void printMenuTitle()
+void printMenuTitle(int shinePosition)
 {
-    setMenuColor(11); // Ciano Claro
-    std::cout << R"(
-            ___ ___  _   ___ ___        
-           / __| _ \/_\ / __| __|       
-           \__ \  _/ _ \ (__| _|        
-       ___ |___/_|/_/ \_\___|___|)";
-    setMenuColor(12); // Vermelho Claro
-    std::cout << R"(    
-      |_ _|_ ___ ____ _ __| |___ _ _ ___
-       | || ' \ V / _` / _` / -_) '_(_-<
-      |___|_||_\_/\__,_\__,_\___|_| /__/)";
-    std::cout << "\n\n";
+    const std::vector<std::string> titleLines = {
+        "        ___ ___  _   ___ ___            ",
+        "       / __| _ \\/_\\ / __| __|             ",
+        "       \\__ \\  _/ _ \\ (__| _|               ",
+        "   ___ |___/_|/_/ \\_\\___|___|             ",
+        "  |_ _|_ ___ ____ _ __| |___ _ _ ___    ",
+        "   | || ' \\ V / _` / _` / -_) '_(_-<     ",
+        "  |___|_||_\\_/\\__,_\\__,_\\___|_| /__/     "};
+
+    const int shineWidth = 4;
+    const int shineColor = 15; // Branco Brilhante
+
+    std::cout << "\n"; // Adiciona o espaço que o R"()" original tinha
+    for (size_t i = 0; i < titleLines.size(); ++i)
+    {
+        int baseColor = (i < 4) ? 11 : 12; // Ciano para "SPACE", Vermelho para "INVADERS"
+
+        for (size_t j = 0; j < titleLines[i].length(); ++j)
+        {
+            // Se o caractere atual estiver na área do brilho, muda a cor
+            if (j >= shinePosition && j < shinePosition + shineWidth)
+            {
+                setMenuColor(shineColor);
+            }
+            else
+            {
+                setMenuColor(baseColor);
+            }
+            std::cout << titleLines[i][j];
+        }
+        std::cout << std::endl;
+    }
+    std::cout << "\n";
 }
 
 void printMenuItem(const std::string &text, bool selected)
@@ -152,64 +182,125 @@ void menu()
     hideCursor();
     std::vector<std::string> options = {"Jogar", "Dificuldade", "Instrucoes", "Ranking", "Sair"};
     int selected_option = 0;
+    int prev_selected_option = -1; // Para detectar mudança na seleção
     char key;
+
+    int animation_pos = -10;                                         // Posição inicial do brilho (fora da tela)
+    const int title_width = 60;                                      // Largura aproximada do título para o reset da animação
+    const int shine_width = 5;                                       // Largura do brilho
+    auto last_anim_time = std::chrono::high_resolution_clock::now(); // Controle de tempo da animação
+    const std::chrono::milliseconds anim_interval(40);               // Intervalo de atualização (~25 FPS)
+    bool redrawTitle = true;
+    bool redrawOptions = true;
+
+    cleanScreen(); // Limpa a tela inteira apenas uma vez, no início.
 
     while (true)
     {
-        cleanScreen();
-        printMenuTitle();
-
-        for (size_t i = 0; i < options.size(); ++i)
+        // --- Lógica da Animação ---
+        auto now = std::chrono::high_resolution_clock::now();
+        if (now - last_anim_time >= anim_interval)
         {
-            printMenuItem(options[i], i == selected_option);
-        }
-        resetColor(); // Garante que a cor é resetada após a impressão do menu
-
-        key = _getch();
-        if (key == 0 || key == -32)
-        {                   // Teclas de seta (primeiro byte 0 ou -32)
-            key = _getch(); // Segundo byte da tecla de seta
-            if (key == 72)
-            { // Seta para cima
-                selected_option = (selected_option - 1 + options.size()) % options.size();
-            }
-            else if (key == 80)
-            { // Seta para baixo
-                selected_option = (selected_option + 1) % options.size();
-            }
-        }
-        else if (key == 13)
-        { // Enter
-            switch (selected_option)
+            last_anim_time = now;
+            animation_pos++;
+            if (animation_pos > title_width)
             {
-            case 0: // Jogar
-                return; // Retorna para main para iniciar o jogo
-            case 1: // Dificuldade
-                selectDifficulty();
-                break;
-            case 2: // Instrucoes
-                exibirInstrucoes();
-                break;
-            case 3: // Ranking
-                showRanking();
-                std::cout << "\n\nPressione qualquer tecla para voltar ao menu...";
-                _getch(); // Espera por qualquer tecla
-                break;
-            case 4: // Sair
-                cleanScreen();
-                std::cout << R"(
-::::::::::: :::    :::     :::     ::::    ::: :::    ::: ::::::::  
-    :+:     :+:    :+:   :+: :+:   :+:+:   :+: :+:   :+: :+:    :+: 
-    +:+     +:+    +:+  +:+   +:+  :+:+:+  +:+ +:+  +:+  +:+        
-    +#+     +#++:++#++ +#++:++#++: +#+ +:+ +#+ +#++:++   +#++:++#++ 
-    +#+     +#+    +#+ +#+     +#+ +#+  +#+#+# +#+  +#+         +#+ 
-    #+#     #+#    #+# #+#     #+# #+#   #+#+# #+#   #+# #+#    #+# 
-    ###     ###    ### ###     ### ###    #### ###    ### ########
-    
-    
-    )";
-                exit(0);
+                animation_pos = -shine_width; // Reseta a animação para a esquerda
             }
+
+            redrawTitle = true; // Marca o título para ser redesenhado no próximo quadro
+        }
+
+        // Se a seleção mudou, marca as opções para serem redesenhadas
+        if (selected_option != prev_selected_option) {
+            redrawOptions = true;
+            prev_selected_option = selected_option;
+        }
+
+        // --- Lógica de Renderização (desenha apenas o que mudou) ---
+        if (redrawTitle) {
+            setCursorPosition(0, 0); // Move o cursor para o topo para redesenhar o título
+            printMenuTitle(animation_pos);
+            redrawTitle = false;
+        }
+        if (redrawOptions) {
+            setCursorPosition(0, 10); // Posiciona o cursor abaixo do título (que tem 9 linhas)
+            for (size_t i = 0; i < options.size(); ++i) {
+                printMenuItem(options[i], i == selected_option);
+            }
+            resetColor();
+            redrawOptions = false;
+        }
+
+        // --- Lógica de Input (Não-bloqueante) ---
+        if (_kbhit())
+        {
+            key = _getch();
+            if (key == 0 || key == -32)
+            {                   // Teclas de seta
+                key = _getch(); // Pega o segundo byte
+                if (key == 72)
+                { // Seta para cima
+                    selected_option = (selected_option - 1 + options.size()) % options.size();
+                }
+                else if (key == 80)
+                { // Seta para baixo
+                    selected_option = (selected_option + 1) % options.size();
+                }
+            }
+            else if (key == 13)
+            { // Enter
+                switch (selected_option)
+                {
+                case 0: // Jogar
+                    return;
+                case 1: // Dificuldade
+                    selectDifficulty();
+                    cleanScreen(); // Após sair de um submenu, limpa a tela
+                    redrawTitle = true;   // e força o redesenho de tudo.
+                    redrawOptions = true;
+                    break;
+                case 2: // Instrucoes
+                    exibirInstrucoes();
+                    cleanScreen();
+                    redrawTitle = true;
+                    redrawOptions = true;
+                    break;
+                case 3: // Ranking
+                    showRanking();
+                    std::cout << "\n\nPressione qualquer tecla para voltar ao menu...";
+                    _getch();
+                    cleanScreen();
+                    redrawTitle = true;
+                    redrawOptions = true;
+                    break;
+                case 4: // Sair
+                    cleanScreen();
+                    // Paleta "Frio": Azul -> Azul Claro -> Ciano -> Ciano Claro -> Verde Claro -> Branco -> Branco Brilhante
+                    const std::vector<int> coolGradient = {1, 9, 3, 11, 10, 7, 15};
+                    const std::vector<std::string> gameOverLines = {
+                        "::::::::::: :::    :::     :::     ::::    ::: :::    ::: ::::::::  ",
+                        "    :+:     :+:    :+:   :+: :+:   :+:+:   :+: :+:   :+: :+:    :+: ",
+                        "    +:+     +:+    +:+  +:+   +:+  :+:+:+  +:+ +:+  +:+  +:+        ",
+                        "    +#+     +#++:++#++ +#++:++#++: +#+ +:+ +#+ +#++:++   +#++:++#++ ",
+                        "    +#+     +#+    +#+ +#+     +#+ +#+  +#+#+# +#+  +#+         +#+ ",
+                        "    #+#     #+#    #+# #+#     #+# #+#   #+#+# #+#   #+# #+#    #+# ",
+                        "    ###     ###    ### ###     ### ###    #### ###    ### ########  "};
+
+                    for (size_t i = 0; i < gameOverLines.size(); ++i)
+                    {
+                        setMenuColor(coolGradient[i % coolGradient.size()]);
+                        std::cout << gameOverLines[i] << std::endl;
+                    }
+                    std::cout << "\n\n";
+                    exit(0);
+                }
+            }
+        }
+        else
+        {
+            // Evita o uso excessivo de CPU quando o programa está ocioso
+            Sleep(1);
         }
     }
 }
