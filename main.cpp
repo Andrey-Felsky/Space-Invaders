@@ -26,6 +26,13 @@
 using namespace std;
 using namespace std::chrono;
 
+// Definição global das naves disponíveis para ser acessível em toda a aplicação
+const std::vector<ShipConfig> AllShipOptions = {
+    {ShipType::TYPE_1_FAST_SINGLE, "Nave Agil", "Um tiro por vez, se movimenta muito rapido.", std::chrono::milliseconds(50), 1, "-^-", 10, '\'', false},
+    {ShipType::TYPE_2_BALANCED_EXTRA, "Nave Tática", "Um pouco mais lenta, mas com capacidade para Tiro Extra.", std::chrono::milliseconds(100), 2, "-O-", 11, '*', false},
+    {ShipType::TYPE_3_BALANCED_MULTI, "Nave Destruidora", "Um pouco mais lenta, mas dispara um Tiro Multiplo.", std::chrono::milliseconds(100), 1, "-W-", 14, 'o', true}
+};
+
 // As definições de ShipType e ShipConfig agora vêm de "mapa/mapa.h"
 // que é incluído acima.
 
@@ -78,11 +85,11 @@ std::chrono::high_resolution_clock::time_point lastPlayerMoveTime; // Para contr
 const int FPS = 30;
 const std::chrono::milliseconds frameDuration(1000 / FPS);
 
-void autoPlayInput() {
+void autoPlayInput(Player& botPlayer) {
     auto now = high_resolution_clock::now();
 
     // A IA também precisa respeitar o cooldown de movimento da nave
-    if (duration_cast<milliseconds>(now - lastPlayerMoveTime) < chosenShipConfig.moveCooldown) {
+    if (duration_cast<milliseconds>(now - botPlayer.lastMoveTime) < botPlayer.shipConfig.moveCooldown) {
         return; // Muito cedo para se mover, sai da função
     }
 
@@ -91,14 +98,14 @@ void autoPlayInput() {
     // Prioridade 1: Desviar de tiros inimigos
     if (tiroInimigoAtivo && tiroInimigoY >= ALTURA_MAPA / 2) { // Só se preocupa com tiros na metade inferior do mapa
         // Se o tiro está vindo diretamente ou muito perto
-        if (abs(tiroInimigoX - players[0].x) <= 1) {
+        if (abs(tiroInimigoX - botPlayer.x) <= 1) {
             // Tenta mover para a direita, se não puder, move para a esquerda.
-            if (players[0].x < LARGURA_MAPA - 1) {
-                players[0].x++;
+            if (botPlayer.x < LARGURA_MAPA - 1) {
+                botPlayer.x++;
             } else {
-                players[0].x--;
+                botPlayer.x--;
             }
-            lastPlayerMoveTime = now;
+            botPlayer.lastMoveTime = now;
             return; // Decisão tomada, sai da função
         }
     }
@@ -106,13 +113,13 @@ void autoPlayInput() {
     // Prioridade 2: Coletar itens
     if (itemDropActive) {
         // Move em direção ao item se não estiver alinhado
-        if (itemDropX > players[0].x && players[0].x < LARGURA_MAPA - 1) {
-            players[0].x++;
-            lastPlayerMoveTime = now;
+        if (itemDropX > botPlayer.x && botPlayer.x < LARGURA_MAPA - 1) {
+            botPlayer.x++;
+            botPlayer.lastMoveTime = now;
             return; // Ação do frame: mover para o item.
-        } else if (itemDropX < players[0].x && players[0].x > 0) {
-            players[0].x--;
-            lastPlayerMoveTime = now;
+        } else if (itemDropX < botPlayer.x && botPlayer.x > 0) {
+            botPlayer.x--;
+            botPlayer.lastMoveTime = now;
             return; // Ação do frame: mover para o item.
         }
         // Se já estiver alinhado com o item, a IA pode prosseguir para a lógica de ataque.
@@ -132,23 +139,23 @@ void autoPlayInput() {
 
     if (targetX != -1) { // Se encontrou um alvo
         // Move para alinhar com o alvo
-        if (targetX > players[0].x && players[0].x < LARGURA_MAPA - 1) {
-            players[0].x++;
-            lastPlayerMoveTime = now;
-        } else if (targetX < players[0].x && players[0].x > 0) {
-            players[0].x--;
-            lastPlayerMoveTime = now;
+        if (targetX > botPlayer.x && botPlayer.x < LARGURA_MAPA - 1) {
+            botPlayer.x++;
+            botPlayer.lastMoveTime = now;
+        } else if (targetX < botPlayer.x && botPlayer.x > 0) {
+            botPlayer.x--;
+            botPlayer.lastMoveTime = now;
         } else { // Se já está alinhado (targetX == naveX)
             // Atira! (copiado da lógica de input do jogador)
-            if (players[0].bullets.size() < static_cast<size_t>(players[0].maxBulletsAllowed)) { // Verifica o limite de balas
-                if (players[0].multiShotActive) {
+            if (botPlayer.bullets.size() < static_cast<size_t>(botPlayer.maxBulletsAllowed)) { // Verifica o limite de balas
+                if (botPlayer.multiShotActive) {
                     // Dispara 3 balas: centro, esquerda, direita (se possível)
-                    players[0].bullets.push_back({players[0].x, ALTURA_MAPA - 2});
-                    if (players[0].x > 0) players[0].bullets.push_back({players[0].x - 1, ALTURA_MAPA - 2});
-                    if (players[0].x < LARGURA_MAPA - 1) players[0].bullets.push_back({players[0].x + 1, ALTURA_MAPA - 2});
+                    botPlayer.bullets.push_back({botPlayer.x, ALTURA_MAPA - 2});
+                    if (botPlayer.x > 0) botPlayer.bullets.push_back({botPlayer.x - 1, ALTURA_MAPA - 2});
+                    if (botPlayer.x < LARGURA_MAPA - 1) botPlayer.bullets.push_back({botPlayer.x + 1, ALTURA_MAPA - 2});
                 } else {
                     // Dispara uma única bala
-                    players[0].bullets.push_back({players[0].x, ALTURA_MAPA - 2});
+                    botPlayer.bullets.push_back({botPlayer.x, ALTURA_MAPA - 2});
                 }
             }
         }
@@ -189,30 +196,33 @@ void input(Player& p1, Player& p2) {
 
         // --- Player 2 Controls (Arrow Keys) ---
         else if (tecla == 0 || tecla == -32) { // Código especial para teclas de seta
-            tecla = _getch(); // Pega o código real da tecla
+            tecla = _getch(); // Pega o código real da tecla, consumindo-o do buffer
 
-            if (tecla == 75 && p2.vidas > 0) { // Seta para Esquerda
-                if (duration_cast<milliseconds>(now - p2.lastMoveTime) >= p2.shipConfig.moveCooldown) {
-                    if (p2.x > 0) p2.x--;
-                    p2.lastMoveTime = now;
+            // Apenas processa as teclas do P2 se não for um bot
+            if (!(currentGameMode == GameMode::TWO_PLAYER && currentDifficulty == Difficulty::AUTO)) {
+                if (tecla == 75 && p2.vidas > 0) { // Seta para Esquerda
+                    if (duration_cast<milliseconds>(now - p2.lastMoveTime) >= p2.shipConfig.moveCooldown) {
+                        if (p2.x > 0) p2.x--;
+                        p2.lastMoveTime = now;
+                    }
                 }
-            }
-            else if (tecla == 77 && p2.vidas > 0) { // Seta para Direita
-                if (duration_cast<milliseconds>(now - p2.lastMoveTime) >= p2.shipConfig.moveCooldown) {
-                    if (p2.x < LARGURA_MAPA - 1) p2.x++;
-                    p2.lastMoveTime = now;
+                else if (tecla == 77 && p2.vidas > 0) { // Seta para Direita
+                    if (duration_cast<milliseconds>(now - p2.lastMoveTime) >= p2.shipConfig.moveCooldown) {
+                        if (p2.x < LARGURA_MAPA - 1) p2.x++;
+                        p2.lastMoveTime = now;
+                    }
                 }
-            }
-            else if (tecla == 72 && p2.vidas > 0) { // Seta para Cima (Atirar)
-                if (p2.bullets.size() < static_cast<size_t>(p2.maxBulletsAllowed)) {
-                    if (p2.multiShotActive) {
-                        // Dispara 3 balas: centro, esquerda, direita (se possível)
-                        p2.bullets.push_back({p2.x, ALTURA_MAPA - 2});
-                        if (p2.x > 0) p2.bullets.push_back({p2.x - 1, ALTURA_MAPA - 2});
-                        if (p2.x < LARGURA_MAPA - 1) p2.bullets.push_back({p2.x + 1, ALTURA_MAPA - 2});
-                    } else {
-                        // Dispara uma única bala
-                        p2.bullets.push_back({p2.x, ALTURA_MAPA - 2});
+                else if (tecla == 72 && p2.vidas > 0) { // Seta para Cima (Atirar)
+                    if (p2.bullets.size() < static_cast<size_t>(p2.maxBulletsAllowed)) {
+                        if (p2.multiShotActive) {
+                            // Dispara 3 balas: centro, esquerda, direita (se possível)
+                            p2.bullets.push_back({p2.x, ALTURA_MAPA - 2});
+                            if (p2.x > 0) p2.bullets.push_back({p2.x - 1, ALTURA_MAPA - 2});
+                            if (p2.x < LARGURA_MAPA - 1) p2.bullets.push_back({p2.x + 1, ALTURA_MAPA - 2});
+                        } else {
+                            // Dispara uma única bala
+                            p2.bullets.push_back({p2.x, ALTURA_MAPA - 2});
+                        }
                     }
                 }
             }
@@ -233,11 +243,7 @@ void selectShip(int playerIndex) {
     hideCursor();
 
     // Definir as configurações das naves
-    const std::vector<ShipConfig> shipOptions = {
-        {ShipType::TYPE_1_FAST_SINGLE, "Nave Agil", "Um tiro por vez, se movimenta muito rapido.", std::chrono::milliseconds(50), 1, "-^-", 10, '\'', false},
-        {ShipType::TYPE_2_BALANCED_EXTRA, "Nave Tática", "Um pouco mais lenta, mas com capacidade para Tiro Extra.", std::chrono::milliseconds(100), 2, "-O-", 11, '*', false},
-        {ShipType::TYPE_3_BALANCED_MULTI, "Nave Destruidora", "Um pouco mais lenta, mas dispara um Tiro Multiplo.", std::chrono::milliseconds(100), 1, "-W-", 14, 'o', true}
-    };
+    const std::vector<ShipConfig>& shipOptions = AllShipOptions;
 
     int selected_option = 0;
     int prev_selected_option = -1; // Para detectar mudança na seleção
@@ -427,7 +433,19 @@ void game(){
     cleanScreen();
     string p1_name = "Jogador1";
     string p2_name = "Jogador2";
-    if (currentDifficulty != Difficulty::AUTO) {
+    if (currentDifficulty == Difficulty::AUTO) {
+        if (currentGameMode == GameMode::TWO_PLAYER) {
+            cout << "Digite o nome do Jogador 1: ";
+            cin >> p1_name;
+            p2_name = "Robo-Player";
+            cout << "Modo AUTO (2P) ativado. Jogador 2 e " << p2_name << ".\n";
+        } else { // SINGLE_PLAYER
+            p1_name = "Robo-Player";
+            cout << "Modo AUTO (1P) ativado. O jogador e " << p1_name << ".\n";
+        }
+        Sleep(2000); // Pausa para o usuário ler
+        cin.ignore(numeric_limits<streamsize>::max(), '\n'); // Limpa o buffer de input
+    } else { // Dificuldade não é AUTO
         if (currentGameMode == GameMode::SINGLE_PLAYER) {
             cout << "Digite seu nome: ";
             cin >> p1_name;
@@ -438,11 +456,6 @@ void game(){
             cin >> p2_name;
         }
         cin.ignore();
-    } else {
-        currentGameMode = GameMode::SINGLE_PLAYER; // AUTO mode is always single player
-        p1_name = "Robo-Player";
-        cout << "Modo AUTO ativado. O jogador e " << p1_name << ".\n";
-        Sleep(2000); // Pausa para o usuário ler
     }
     auto gameStartTime = high_resolution_clock::now();
     auto lastFrameTime = high_resolution_clock::now();
@@ -468,12 +481,17 @@ void game(){
 
         if (now - lastFrameTime >= frameDuration) {
             // --- LÓGICA DE UPDATE ---
-            if (currentDifficulty == Difficulty::AUTO) {
-                autoPlayInput(); // A IA joga
-            } else {
-                input(players[0], players[1]); // O jogador humano joga
-            }
+            // A input() sempre escuta, mas a lógica interna agora previne o controle do bot
+            input(players[0], players[1]);
 
+            // A IA controla o jogador apropriado no modo AUTO
+            if (currentDifficulty == Difficulty::AUTO) {
+                if (currentGameMode == GameMode::SINGLE_PLAYER) {
+                    autoPlayInput(players[0]); // Bot joga como P1
+                } else { // TWO_PLAYER
+                    autoPlayInput(players[1]); // Bot joga como P2
+                }
+            }
             updatePlayerBullets();
             updateTiroInimigo();
             if (bossFightActive) {
@@ -544,14 +562,22 @@ int main() {
 
         // Ship selection for both players
         selectShip(0);
+
         // Only select for P2 if in two-player mode and P1 didn't press ESC
         if (currentGameMode == GameMode::TWO_PLAYER && players[0].shipConfig.type != ShipType::NONE) {
-            selectShip(1);
+            if (currentDifficulty == Difficulty::AUTO) {
+                // Assign a default balanced ship to the bot (P2)
+                players[1].shipConfig = AllShipOptions[1]; // Assign "Nave Tática"
+            } else {
+                // Human P2 selects a ship
+                selectShip(1);
+            }
         }
 
         // Check if selection was completed (no ESC pressed)
         bool p1_selected = players[0].shipConfig.type != ShipType::NONE;
-        bool p2_selected = (currentGameMode == GameMode::TWO_PLAYER) ? players[1].shipConfig.type != ShipType::NONE : true;
+        bool p2_is_bot = (currentGameMode == GameMode::TWO_PLAYER && currentDifficulty == Difficulty::AUTO);
+        bool p2_selected = (currentGameMode == GameMode::SINGLE_PLAYER || p2_is_bot) ? true : (players[1].shipConfig.type != ShipType::NONE);
         if (p1_selected && p2_selected) {
             game(); // Inicia o jogo com a(s) nave(s) escolhida(s).
         }
