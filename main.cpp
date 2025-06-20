@@ -8,6 +8,8 @@
 #include <ctime>
 #include <algorithm>
 #include <vector>
+#include <string> // Adicionado para std::string em ShipConfig
+#include <limits> // Adicionado para std::numeric_limits em selectShip
 
 #include "mapa/mapa.h"
 #include "enemy/enemy.h"
@@ -20,6 +22,23 @@
 using namespace std;
 using namespace std::chrono;
 
+// --- NOVAS DEFINIÇÕES E GLOBAIS PARA SELEÇÃO DE NAVE ---
+enum class ShipType {
+    TYPE_1_FAST_SINGLE,    // Nave 1: Rápida, 1 tiro
+    TYPE_2_BALANCED_EXTRA, // Nave 2: Normal, Tiro Extra (2 balas na tela)
+    TYPE_3_BALANCED_MULTI  // Nave 3: Normal, Tiro Múltiplo
+};
+
+struct ShipConfig {
+    ShipType type;
+    std::string name;
+    std::string description;
+    std::chrono::milliseconds moveCooldown; // Menor = mais rápido
+    int initialMaxBullets;                  // Quantos tiros na tela por vez (ou "rajadas" para multi-tiro)
+    bool initialMultiShotActive;            // Se o tiro múltiplo é padrão para esta nave
+};
+
+ShipConfig chosenShipConfig; // Guarda a configuração da nave selecionada pelo jogador
 char mapa[ALTURA_MAPA][LARGURA_MAPA];
 int naveX = LARGURA_MAPA / 2;
 
@@ -52,17 +71,27 @@ std::chrono::high_resolution_clock::time_point enemyFreezeEndTime;
 // This will be used to revert enemy speed after a speed boost or freeze
 std::chrono::milliseconds originalEnemyMoveIntervalMs = INITIAL_ENEMY_MOVE_INTERVAL;
  
+std::chrono::high_resolution_clock::time_point lastPlayerMoveTime; // Para controlar o cooldown de movimento do jogador
+
 const int FPS = 30;
 const std::chrono::milliseconds frameDuration(1000 / FPS);
 
 void input() {
     if (_kbhit()) {
         char tecla = _getch();
+        auto now = high_resolution_clock::now(); // Pega o tempo atual para checar cooldown
+
         if (tecla == 'a' || tecla == 'A') {
-            if (naveX > 0) naveX--;
+            if (duration_cast<milliseconds>(now - lastPlayerMoveTime) >= chosenShipConfig.moveCooldown) {
+                if (naveX > 0) naveX--;
+                lastPlayerMoveTime = now; // Atualiza o tempo do último movimento
+            }
         }
         else if (tecla == 'd' || tecla == 'D') {
-            if (naveX < LARGURA_MAPA - 1) naveX++;
+            if (duration_cast<milliseconds>(now - lastPlayerMoveTime) >= chosenShipConfig.moveCooldown) {
+                if (naveX < LARGURA_MAPA - 1) naveX++;
+                lastPlayerMoveTime = now; // Atualiza o tempo do último movimento
+            }
         }
         else if (tecla == ' ') {
             if (playerBullets.size() < static_cast<size_t>(maxPlayerBulletsAllowed)) {
@@ -83,12 +112,58 @@ void input() {
     }
 }
 
+void selectShip() {
+    system("cls");
+    cout << "Escolha sua Nave:\n\n";
+
+    cout << "1. Nave Agil\n";
+    cout << "   - Descricao: Um tiro por vez, se movimenta muito rapido.\n";
+    cout << "   - Atributos: Movimento Rapido (50ms cooldown), 1 Tiro Max, Sem Tiro Multiplo.\n\n";
+
+    cout << "2. Nave Tática\n";
+    cout << "   - Descricao: Um pouco mais lenta, mas com capacidade para Tiro Extra.\n";
+    cout << "   - Atributos: Movimento Normal (100ms cooldown), 2 Tiros Max, Sem Tiro Multiplo.\n\n";
+
+    cout << "3. Nave Destruidora\n";
+    cout << "   - Descricao: Um pouco mais lenta, mas dispara um Tiro Multiplo.\n";
+    cout << "   - Atributos: Movimento Normal (100ms cooldown), 1 Rajada Max, Tiro Multiplo Ativo.\n\n";
+
+    cout << "Escolha (1-3): ";
+
+    char choice_char;
+    cin >> choice_char;
+    cin.ignore(std::numeric_limits<std::streamsize>::max(), '\n'); // Limpa o buffer de entrada
+
+    switch (choice_char) {
+        case '1':
+            chosenShipConfig = {ShipType::TYPE_1_FAST_SINGLE, "Nave Agil", "Um tiro por vez, se movimenta muito rapido.", std::chrono::milliseconds(50), 1, false};
+            break;
+        case '2':
+            chosenShipConfig = {ShipType::TYPE_2_BALANCED_EXTRA, "Nave Tática", "Tiro Extra (2 balas na tela).", std::chrono::milliseconds(100), 2, false};
+            break;
+        case '3':
+            chosenShipConfig = {ShipType::TYPE_3_BALANCED_MULTI, "Nave Destruidora", "Tiro Multiplo.", std::chrono::milliseconds(100), 1, true};
+            break;
+        default:
+            cout << "Escolha invalida. Usando Nave Agil por padrao.\n";
+            chosenShipConfig = {ShipType::TYPE_1_FAST_SINGLE, "Nave Agil", "Um tiro por vez, se movimenta muito rapido.", std::chrono::milliseconds(50), 1, false};
+            Sleep(1500); // Dá tempo para o usuário ler a mensagem
+            break;
+    }
+    system("cls");
+}
+
 void game(){
     gameOver = false;
     playerBullets.clear();
     score = 0;
     naveX = LARGURA_MAPA / 2;
     vidas = 3;
+
+    // Aplica a configuração da nave escolhida
+    maxPlayerBulletsAllowed = chosenShipConfig.initialMaxBullets;
+    multiShotActive = chosenShipConfig.initialMultiShotActive;
+    lastPlayerMoveTime = high_resolution_clock::now(); // Inicializa para o primeiro movimento
 
     itemDropActive = false;
     itemDropType = ItemType::EXTRA_LIFE; // Reset
@@ -97,10 +172,8 @@ void game(){
     enemyMoveInterval = INITIAL_ENEMY_MOVE_INTERVAL;
     originalEnemyMoveIntervalMs = INITIAL_ENEMY_MOVE_INTERVAL;
 
-    // Reset power-up states for a new game
-    maxPlayerBulletsAllowed = 1;
-    multiShotActive = false;
-    auto now_for_init = high_resolution_clock::now(); // Initialize timers to a state indicating they are not active
+    // Reseta os timers de power-ups para um estado que indica que não estão ativos
+    auto now_for_init = high_resolution_clock::now(); 
     speedBoostEndTime = now_for_init;
     extraShotEndTime = now_for_init;
     multiShotEndTime = now_for_init;
@@ -128,12 +201,15 @@ void game(){
         float tempoDecorrido = elapsedTime.count();
 
         // Check and manage active power-up timers
-        if (multiShotActive && now >= multiShotEndTime) {
-            multiShotActive = false;
+        // Se o multi-shot estava ativo por um power-up e o tempo expirou, reverte para o base da nave
+        if (multiShotActive && multiShotActive != chosenShipConfig.initialMultiShotActive && now >= multiShotEndTime) {
+            multiShotActive = chosenShipConfig.initialMultiShotActive;
         }
-        if (maxPlayerBulletsAllowed > 1 && now >= extraShotEndTime) {
-            maxPlayerBulletsAllowed = 1; // Revert to single bullet capacity
+        // Se maxPlayerBulletsAllowed foi aumentado por um power-up e o tempo expirou, reverte para o base da nave
+        if (maxPlayerBulletsAllowed > chosenShipConfig.initialMaxBullets && now >= extraShotEndTime) {
+            maxPlayerBulletsAllowed = chosenShipConfig.initialMaxBullets;
         }
+
         // Speed boost for player bullets doesn't have a direct timer here, it affects bullet update speed.
         // Enemy freeze is checked in enemy movement logic.
         // If "Aumento de Velocidade" meant faster enemy movement (a debuff pickup), we'd manage it here too.
@@ -191,12 +267,20 @@ void game(){
 int main() {
     srand(time(NULL));
     system("cls");
-    hideCursor(); // Ensure cursor is hidden
+    hideCursor(); // Garante que o cursor está escondido
+
+    // Inicializa com uma nave padrão. selectShip() irá sobrescrever isso.
+    // Necessário caso haja um caminho no menu que pule a seleção e vá direto para o jogo (improvável com a estrutura atual).
+    chosenShipConfig = {ShipType::TYPE_1_FAST_SINGLE, "Nave Agil", "Um tiro por vez, se movimenta muito rapido.", std::chrono::milliseconds(50), 1, false};
 
     while (true) {
-        menu();
-        game();
+        menu(); // Função do menu/menu.h.
+                // Assume-se que se "Jogar" for escolhido, menu() retorna.
+                // Se "Sair" for escolhido, menu() chama exit(0).
+
+        selectShip(); // Chama a seleção de nave APÓS o menu principal e ANTES do jogo.
+        game();       // Inicia o jogo com a nave escolhida.
     }
 
-    return 0;
+    return 0; // Inalcançável se menu() trata a saída.
 }
