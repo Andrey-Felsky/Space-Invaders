@@ -68,7 +68,7 @@ void selectDifficulty()
         {"Facil", Difficulty::FACIL},
         {"Normal", Difficulty::NORMAL},
         {"Dificil", Difficulty::DIFICIL},
-        {"Modo Automatico", Difficulty::AUTO}};
+        {"AUTO", Difficulty::AUTO}};
 
     int selected_option = 0;
     // Encontra o índice inicial com base na dificuldade global atual
@@ -197,7 +197,17 @@ void menu()
                 break;
             case 4: // Sair
                 cleanScreen();
-                std::cout << "Obrigado por jogar!\n";
+                std::cout << R"(
+::::::::::: :::    :::     :::     ::::    ::: :::    ::: ::::::::  
+    :+:     :+:    :+:   :+: :+:   :+:+:   :+: :+:   :+: :+:    :+: 
+    +:+     +:+    +:+  +:+   +:+  :+:+:+  +:+ +:+  +:+  +:+        
+    +#+     +#++:++#++ +#++:++#++: +#+ +:+ +#+ +#++:++   +#++:++#++ 
+    +#+     +#+    +#+ +#+     +#+ +#+  +#+#+# +#+  +#+         +#+ 
+    #+#     #+#    #+# #+#     #+# #+#   #+#+# #+#   #+# #+#    #+# 
+    ###     ###    ### ###     ### ###    #### ###    ### ########
+    
+    
+    )";
                 exit(0);
             }
         }
