@@ -50,7 +50,8 @@ const std::chrono::seconds ENEMY_FREEZE_DURATION(2);
 enum class Difficulty {
     FACIL,
     NORMAL,
-    DIFICIL
+    DIFICIL,
+    AUTO
 };
 
 // Base values that will be modified by difficulty

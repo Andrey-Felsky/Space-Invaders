@@ -71,6 +71,74 @@ std::chrono::high_resolution_clock::time_point lastPlayerMoveTime; // Para contr
 const int FPS = 30;
 const std::chrono::milliseconds frameDuration(1000 / FPS);
 
+// Protótipo da função de IA para que a função game() possa encontrá-la.
+void autoPlayInput();
+
+void autoPlayInput() {
+    auto now = high_resolution_clock::now();
+
+    // A IA também precisa respeitar o cooldown de movimento da nave
+    if (duration_cast<milliseconds>(now - lastPlayerMoveTime) < chosenShipConfig.moveCooldown) {
+        return; // Muito cedo para se mover, sai da função
+    }
+
+    // --- Lógica de Decisão da IA ---
+
+    // Prioridade 1: Desviar de tiros inimigos
+    if (tiroInimigoAtivo && tiroInimigoY >= ALTURA_MAPA / 2) { // Só se preocupa com tiros na metade inferior do mapa
+        // Se o tiro está vindo diretamente ou muito perto
+        if (abs(tiroInimigoX - naveX) <= 1) {
+            // Tenta mover para a direita, se não puder, move para a esquerda.
+            if (naveX < LARGURA_MAPA - 1) {
+                naveX++;
+            } else {
+                naveX--;
+            }
+            lastPlayerMoveTime = now;
+            return; // Decisão tomada, sai da função
+        }
+    }
+
+    // Prioridade 2: Coletar itens
+    if (itemDropActive) {
+        if (itemDropX > naveX && naveX < LARGURA_MAPA - 1) {
+            naveX++;
+        } else if (itemDropX < naveX && naveX > 0) {
+            naveX--;
+        }
+        lastPlayerMoveTime = now;
+        // A IA também atirará enquanto coleta itens
+    }
+
+    // Prioridade 3: Atacar inimigos
+    // Encontra o inimigo vivo mais próximo na linha de frente (mais abaixo)
+    int targetX = -1, targetY = -1;
+    for (int i = 0; i < ENEMY_ARRAY_MAX_SIZE; ++i) {
+        if (inimigoVivo[i]) {
+            if (inimigos[i][1] > targetY) { // inimigos[i][1] é a coordenada Y
+                targetY = inimigos[i][1];
+                targetX = inimigos[i][0]; // inimigos[i][0] é a coordenada X
+            }
+        }
+    }
+
+    if (targetX != -1) { // Se encontrou um alvo
+        // Move para alinhar com o alvo
+        if (targetX > naveX && naveX < LARGURA_MAPA - 1) {
+            naveX++;
+            lastPlayerMoveTime = now;
+        } else if (targetX < naveX && naveX > 0) {
+            naveX--;
+            lastPlayerMoveTime = now;
+        } else { // Se já está alinhado (targetX == naveX)
+            // Atira! (copiado da lógica de input do jogador)
+            if (playerBullets.size() < static_cast<size_t>(maxPlayerBulletsAllowed)) {
+                 playerBullets.push_back({naveX, ALTURA_MAPA - 2});
+            }
+        }
+    }
+}
+
 void input() {
     if (_kbhit()) {
         char tecla = _getch();
@@ -170,6 +238,10 @@ void game(){
             currentItemDropChance = BASE_ITEM_DROP_CHANCE - 10; // 15%
             currentEnemyMoveInterval = BASE_ENEMY_MOVE_INTERVAL - std::chrono::milliseconds(150); // Mais rápido
             break;
+        case Difficulty::AUTO:
+            currentItemDropChance = BASE_ITEM_DROP_CHANCE + 25; // 50%, para a IA se divertir mais
+            currentEnemyMoveInterval = BASE_ENEMY_MOVE_INTERVAL - std::chrono::milliseconds(150); // Inimigos rápidos para um bom desafio
+            break;
     }
 
     // Aplica a configuração da nave escolhida
@@ -194,11 +266,15 @@ void game(){
     initEnemy();
 
     cleanScreen();
-    string nome;
-    cout << "Digite seu nome: ";
-    cin >> nome;
-    cin.ignore();
-
+    string nome = "Robo-Player";
+    if (currentDifficulty != Difficulty::AUTO) {
+        cout << "Digite seu nome: ";
+        cin >> nome;
+        cin.ignore();
+    } else {
+        cout << "Modo AUTO ativado. O jogador e " << nome << ".\n";
+        Sleep(2000); // Pausa para o usuário ler
+    }
     auto gameStartTime = high_resolution_clock::now();
     auto lastFrameTime = high_resolution_clock::now();
     auto lastEnemyMoveTime = high_resolution_clock::now();
@@ -235,7 +311,13 @@ void game(){
         if (now - lastFrameTime >= frameDuration) {
             resetCursorPosition(); // Usa o reset de cursor para evitar piscar durante o jogo
             render(score, tempoDecorrido, vidas);
-            input();
+            
+            if (currentDifficulty == Difficulty::AUTO) {
+                autoPlayInput(); // A IA joga
+            } else {
+                input(); // O jogador humano joga
+            }
+
             updatePlayerBullets(); // Updated from updateTire
             updateTiroInimigo();
             checkCollisions();

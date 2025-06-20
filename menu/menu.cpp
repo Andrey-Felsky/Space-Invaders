@@ -64,8 +64,23 @@ void exibirInstrucoes()
 
 void selectDifficulty()
 {
-    const std::vector<std::string> options = {"Facil", "Normal", "Dificil"};
-    int selected_option = static_cast<int>(currentDifficulty);
+    const std::vector<std::pair<std::string, Difficulty>> difficultyOptions = {
+        {"Facil", Difficulty::FACIL},
+        {"Normal", Difficulty::NORMAL},
+        {"Dificil", Difficulty::DIFICIL},
+        {"Modo Automatico", Difficulty::AUTO}};
+
+    int selected_option = 0;
+    // Encontra o índice inicial com base na dificuldade global atual
+    for (size_t i = 0; i < difficultyOptions.size(); ++i)
+    {
+        if (difficultyOptions[i].second == currentDifficulty)
+        {
+            selected_option = i;
+            break;
+        }
+    }
+
     char key;
 
     while (true)
@@ -74,39 +89,35 @@ void selectDifficulty()
         setMenuColor(7);
         std::cout << "\n\n   === SELECIONE A DIFICULDADE ===\n\n";
 
-        for (int i = 0; i < options.size(); ++i)
+        for (size_t i = 0; i < difficultyOptions.size(); ++i)
         {
-            // Print selection cursor
+            // Imprime o cursor de seleção (amarelo > <)
             if (i == selected_option)
             {
                 setMenuColor(14); // Yellow
                 std::cout << "                > ";
             }
-            else
-            {
-                setMenuColor(7); // White
+            else {
                 std::cout << "                  ";
             }
 
-            // Print option text with color for current difficulty
-            if (i == static_cast<int>(currentDifficulty))
+            // Imprime o texto da opção, colorindo a que está ativa em verde
+            if (difficultyOptions[i].second == currentDifficulty)
             {
                 setMenuColor(10); // Green
             }
-            else
-            {
+            else {
                 setMenuColor(7); // White
             }
-            std::cout << options[i];
+            std::cout << difficultyOptions[i].first;
 
-            // Print selection cursor
+            // Imprime o cursor de seleção
             if (i == selected_option)
             {
                 setMenuColor(14); // Yellow
                 std::cout << " <\n";
             }
-            else
-            {
+            else {
                 std::cout << "  \n";
             }
         }
@@ -114,25 +125,20 @@ void selectDifficulty()
         setMenuColor(7);
         std::cout << "\n\n   Use as setas para navegar e ENTER para confirmar.";
         std::cout << "\n   Pressione ESC para voltar ao menu.";
-        resetColor();
 
         key = _getch();
         if (key == 0 || key == -32)
         { // Arrow keys
             key = _getch();
-            if (key == 72)
-            { // Up
-                selected_option = (selected_option == 0) ? options.size() - 1 : selected_option - 1;
-            }
-            else if (key == 80)
-            { // Down
-                selected_option = (selected_option == options.size() - 1) ? 0 : selected_option + 1;
+            if (key == 72) { // Up
+                selected_option = (selected_option == 0) ? difficultyOptions.size() - 1 : selected_option - 1;
+            } else if (key == 80) { // Down
+                selected_option = (selected_option + 1) % difficultyOptions.size();
             }
         }
         else if (key == 13)
         { // Enter
-            currentDifficulty = static_cast<Difficulty>(selected_option);
-            // Loop again to show the new selection in green
+            currentDifficulty = difficultyOptions[selected_option].second;
         }
         else if (key == 27)
         { // ESC
