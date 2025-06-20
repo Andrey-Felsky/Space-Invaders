@@ -1,6 +1,7 @@
 #ifndef CONSTANTS_H
 #define CONSTANTS_H
 
+#include <windows.h> 
 #include <chrono>
 
 const int LARGURA_MAPA = 30;
@@ -58,5 +59,11 @@ enum class Difficulty {
 // Base values that will be modified by difficulty
 const std::chrono::milliseconds BASE_ENEMY_MOVE_INTERVAL(500);
 const int BASE_ITEM_DROP_CHANCE = 25; // % chance
+
+// Sound constants
+const DWORD ENEMY_EXPLOSION_FREQ = 200; // Hz (frequência mais baixa para inimigo)
+const DWORD ENEMY_EXPLOSION_DUR = 100; // ms
+const DWORD PLAYER_EXPLOSION_FREQ = 100; // Hz (frequência ainda mais baixa para jogador)
+const DWORD PLAYER_EXPLOSION_DUR = 200; // ms
 
 #endif

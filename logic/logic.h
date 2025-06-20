@@ -7,9 +7,12 @@
 #include "../utils/constants.h"
 
 extern std::vector<std::pair<int, int>> playerBullets;
+extern bool inimigoVivo[ENEMY_ARRAY_MAX_SIZE];
+extern int inimigos[ENEMY_ARRAY_MAX_SIZE][2];
 extern int naveX;
 extern int score;
 extern bool gameOver;
+extern bool playerWon;
 extern int vidas;
 
 extern bool tiroInimigoAtivo;
@@ -18,20 +21,19 @@ extern int tiroInimigoX, tiroInimigoY;
 extern bool itemDropActive;
 extern int itemDropX, itemDropY;
 extern ItemType itemDropType; // Now using the enum from constants.h
+extern int currentItemDropChance;
 
-extern int maxPlayerBullets;    // For power-ups
+extern int maxPlayerBulletsAllowed;    // For power-ups
 extern bool multiShotActive;    // For power-ups
 extern std::chrono::milliseconds enemyMoveInterval;
-extern const std::chrono::milliseconds INITIAL_ENEMY_MOVE_INTERVAL;
-extern const std::chrono::milliseconds MIN_ENEMY_MOVE_INTERVAL;
-
 extern int enemiesDefeatedCount;
 
 extern bool explosionActiveEnemy;
 extern int explosionEnemyX, explosionEnemyY;
 extern bool explosionActivePlayer;
 extern int explosionPlayerX, explosionPlayerY;
-extern std::chrono::high_resolution_clock::time_point explosionStartTime;
+extern std::chrono::high_resolution_clock::time_point enemyExplosionStartTime;
+extern std::chrono::high_resolution_clock::time_point playerExplosionStartTime;
 
 // Extern declarations for power-up timers (defined in main.cpp)
 extern std::chrono::high_resolution_clock::time_point speedBoostEndTime;
@@ -44,8 +46,7 @@ void updatePlayerBullets(); // Renamed from updateTire
 void checkCollisions();
 void checkEndOfGame();
 void updateTiroInimigo();
-void adjustEnemySpeed();
-void tryDropItem(int enemyX, int enemyY);
 void updateItemDrop();
+void updateExplosions();
 
 #endif

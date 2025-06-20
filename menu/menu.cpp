@@ -136,17 +136,21 @@ void selectDifficulty()
         { // Arrow keys
             key = _getch();
             if (key == 72) { // Up
+                Beep(600, 50); // Som de navegação
                 selected_option = (selected_option == 0) ? difficultyOptions.size() - 1 : selected_option - 1;
             } else if (key == 80) { // Down
+                Beep(600, 50); // Som de navegação
                 selected_option = (selected_option + 1) % difficultyOptions.size();
             }
         }
         else if (key == 13)
         { // Enter
+            Beep(900, 100); // Som de confirmação
             currentDifficulty = difficultyOptions[selected_option].second;
         }
         else if (key == 27)
         { // ESC
+            Beep(400, 80); // Som de cancelamento/volta
             return; // Return to main menu
         }
     }
@@ -216,15 +220,18 @@ void menu()
                 key = _getch(); // Pega o segundo byte
                 if (key == 72)
                 { // Seta para cima
+                    Beep(600, 50); // Som de navegação
                     selected_option = (selected_option - 1 + options.size()) % options.size();
                 }
                 else if (key == 80)
                 { // Seta para baixo
+                    Beep(600, 50); // Som de navegação
                     selected_option = (selected_option + 1) % options.size();
                 }
             }
             else if (key == 13)
             { // Enter
+                Beep(900, 100); // Som de confirmação
                 switch (selected_option)
                 {
                 case 0: // Jogar
@@ -254,6 +261,7 @@ void menu()
                     redrawOptions = true;
                     break;
                 case 4: // Sair
+                    Beep(300, 200); // Som de saída
                     cleanScreen();
                     setConsoleColor(7); // Define a cor para branco
                     const std::vector<std::string> gameOverLines = {

@@ -104,26 +104,14 @@ void render(int score, float tempo, int currentVidas)
 
     if (explosionActiveEnemy)
     {
-        if (now - explosionStartTime < EXPLOSION_DURATION)
-        {
-            mapa[explosionEnemyY][explosionEnemyX] = 'X';
-        }
-        else
-        {
-            explosionActiveEnemy = false;
-        }
+        // A lógica de desativar a explosão foi movida para updateExplosions() em logic.cpp
+        mapa[explosionEnemyY][explosionEnemyX] = 'X';
     }
 
     if (explosionActivePlayer)
     {
-        if (now - explosionStartTime < EXPLOSION_DURATION)
-        {
-            mapa[explosionPlayerY][explosionPlayerX] = '@';
-        }
-        else
-        {
-            explosionActivePlayer = false;
-        }
+        // A lógica de desativar a explosão foi movida para updateExplosions() em logic.cpp
+        mapa[explosionPlayerY][explosionPlayerX] = '@';
     }
 
     if (itemDropActive && itemDropY < ALTURA_MAPA && itemDropX < LARGURA_MAPA)
@@ -156,16 +144,6 @@ void render(int score, float tempo, int currentVidas)
         }
         if (itemDropX >= 0 && itemDropX < LARGURA_MAPA && itemDropY >= 0 && itemDropY < ALTURA_MAPA)
             mapa[itemDropY][itemDropX] = itemChar;
-    }
-
-    // Clear explosion if duration passed (moved here for clarity, can be in logic)
-    if (explosionActiveEnemy && now - explosionStartTime >= EXPLOSION_DURATION)
-    {
-        explosionActiveEnemy = false;
-    }
-    if (explosionActivePlayer && now - explosionStartTime >= EXPLOSION_DURATION)
-    {
-        explosionActivePlayer = false;
     }
 
     for (int y = 0; y < ALTURA_MAPA; y++)

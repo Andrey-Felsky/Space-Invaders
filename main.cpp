@@ -65,6 +65,16 @@ std::chrono::high_resolution_clock::time_point extraShotEndTime;
 std::chrono::high_resolution_clock::time_point multiShotEndTime;
 std::chrono::high_resolution_clock::time_point enemyFreezeEndTime;
 
+// Explosion state variables
+bool explosionActiveEnemy = false;
+int explosionEnemyX = 0, explosionEnemyY = 0;
+bool explosionActivePlayer = false;
+int explosionPlayerX = 0, explosionPlayerY = 0;
+std::chrono::high_resolution_clock::time_point enemyExplosionStartTime;
+std::chrono::high_resolution_clock::time_point playerExplosionStartTime;
+
+int enemiesDefeatedCount = 0;
+
 // This will be used to revert enemy speed after a speed boost or freeze
 std::chrono::milliseconds originalEnemyMoveIntervalMs; // Será definido com base na dificuldade
  
@@ -280,17 +290,21 @@ void selectShip() {
             if (key == 0 || key == -32) { // Arrow keys
                 key = _getch(); // Get the second byte
                 if (key == 72) { // Up arrow
+                    Beep(600, 50); // Som de navegação
                     selected_option = (selected_option == 0) ? shipOptions.size() - 1 : selected_option - 1;
                 } else if (key == 80) { // Down arrow
+                    Beep(600, 50); // Som de navegação
                     selected_option = (selected_option + 1) % shipOptions.size();
                 }
             } else if (key == 13) { // Enter key
                 chosenShipConfig = shipOptions[selected_option];
+                Beep(900, 100); // Som de confirmação
                 cleanScreen();
                 resetConsoleColor(); // Garante que a cor seja resetada ao sair
                 return; // Exit ship selection
             } else if (key == 27) { // ESC key
                 chosenShipConfig = {ShipType::NONE, "", "", std::chrono::milliseconds(0), 0, "", 0, ' ', false}; // Set to NONE
+                Beep(400, 80); // Som de cancelamento/volta
                 cleanScreen();
                 resetConsoleColor(); // Garante que a cor seja resetada ao sair
                 return; 
@@ -394,19 +408,22 @@ void game(){
 
 
         if (now - lastFrameTime >= frameDuration) {
-            resetCursorPosition(); // Usa o reset de cursor para evitar piscar durante o jogo
-            render(score, tempoDecorrido, vidas);
-            
+            // --- LÓGICA DE UPDATE ---
             if (currentDifficulty == Difficulty::AUTO) {
                 autoPlayInput(); // A IA joga
             } else {
                 input(); // O jogador humano joga
             }
 
-            updatePlayerBullets(); // Updated from updateTire
+            updatePlayerBullets();
             updateTiroInimigo();
+            updateExplosions(); // Atualiza o estado das explosões
             checkCollisions();
             checkEndOfGame();
+
+            // --- RENDERIZAÇÃO ---
+            resetCursorPosition(); // Usa o reset de cursor para evitar piscar durante o jogo
+            render(score, tempoDecorrido, vidas);
             lastFrameTime = now;
         }
 
