@@ -12,7 +12,7 @@ struct GameElements {
     int spaceshipColor = 10;
     int wallColor = 9;
     int pathColor = 7;
-    int enemyColor = 12;
+    int enemyColor = 13; // Alterado para 13 (Light Magenta/Roxo)
     int shootColor = 14;
 };
 

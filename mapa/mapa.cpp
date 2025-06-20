@@ -141,49 +141,42 @@ void render(int score, float tempo, int currentVidas)
         for (int x = 0; x < LARGURA_MAPA; x++)
         {
             char c = mapa[y][x];
-
-            if (c == gameIcons.enemy)
-            {
-                SetConsoleTextAttribute(hConsole, gameIcons.enemyColor);
-            }
-            // Verifica se o caractere 'c' é o caractere de tiro da nave atual do jogador
-            else if (c == chosenShipConfig.bulletChar)
-            {
-                SetConsoleTextAttribute(hConsole, chosenShipConfig.bulletColor); // Usa a cor do tiro da nave escolhida
-            }
-            // Verifica se o caractere 'c' faz parte da skin da nave
-            // Isso requer que a skin seja desenhada ANTES deste loop de impressão, o que já acontece.
-            bool isPlayerShipChar = false; // Variável local para evitar redefinição
-            if (y == ALTURA_MAPA -1 && !chosenShipConfig.skin.empty()) {
+            
+            // A verificação da nave do jogador deve vir primeiro, pois se baseia na posição, não apenas no caractere.
+            bool isPlayerShipChar = false;
+            if (y == ALTURA_MAPA - 1 && !chosenShipConfig.skin.empty()) {
                 int skinLength = chosenShipConfig.skin.length();
                 int startX = naveX - skinLength / 2;
                 if (x >= startX && x < startX + skinLength) {
                     isPlayerShipChar = true;
                 }
             }
-
-            if (isPlayerShipChar) { SetConsoleTextAttribute(hConsole, gameIcons.spaceshipColor); }
-            else if (c == '|')
-            {
-                SetConsoleTextAttribute(hConsole, 12); // Cor para tiro do inimigo (ex: Vermelho)
-            }
-            else if (c == 'X' || c == '@')
-            {
-                SetConsoleTextAttribute(hConsole, 6);
-            }
-            else if (c == 'L' || c == 'S' || c == 'E' || c == 'M' || c == '$' || c == 'F' || c == '+' || c == '?') // Item characters
-            {
-                // Assign specific colors per item type if desired, e.g., green for Life, yellow for Speed
-                if (c == 'L') SetConsoleTextAttribute(hConsole, 10); // Green
-                else if (c == 'S') SetConsoleTextAttribute(hConsole, 14); // Yellow
-                else if (c == '$') SetConsoleTextAttribute(hConsole, 12); // Light Red for points
-                else if (c == 'F') SetConsoleTextAttribute(hConsole, 3); // Cyan for Freeze
-                else SetConsoleTextAttribute(hConsole, 11); // Light Cyan for others
-                
+            
+            // Lógica de coloração unificada para evitar que uma cor sobrescreva a outra.
+            if (isPlayerShipChar) {
+                SetConsoleTextAttribute(hConsole, gameIcons.spaceshipColor);
+            } else if (c == gameIcons.enemy) {
+                SetConsoleTextAttribute(hConsole, gameIcons.enemyColor); // Agora esta cor será aplicada corretamente.
+            } else if (c == chosenShipConfig.bulletChar) {
+                SetConsoleTextAttribute(hConsole, chosenShipConfig.bulletColor);
+            } else if (c == '|') {
+                SetConsoleTextAttribute(hConsole, 12); // Tiro do inimigo (Vermelho)
+            } else if (c == 'X' || c == '@') {
+                SetConsoleTextAttribute(hConsole, 6);  // Explosão (Amarelo escuro/Laranja)
+            } else if (c == 'L') {
+                SetConsoleTextAttribute(hConsole, 10); // Vida (Verde)
+            } else if (c == 'S') {
+                SetConsoleTextAttribute(hConsole, 14); // Velocidade (Amarelo)
+            } else if (c == '$') {
+                SetConsoleTextAttribute(hConsole, 12); // Pontos (Vermelho claro)
+            } else if (c == 'F') {
+                SetConsoleTextAttribute(hConsole, 3);  // Freeze (Ciano)
+            } else if (c == 'E' || c == 'M' || c == '+' || c == '?') {
+                SetConsoleTextAttribute(hConsole, 11); // Outros itens (Ciano claro)
             }
             else
             {
-                SetConsoleTextAttribute(hConsole, 7); 
+                SetConsoleTextAttribute(hConsole, 7); // Cor padrão para o caminho/fundo
             }
 
             cout << c;
