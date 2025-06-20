@@ -190,84 +190,121 @@ void render(int score, float tempo, int currentVidas)
         cout << gameIcons.wall;
     cout << gameIcons.wall << "\n";
 
-    // Display active power-ups
-    cout << gameIcons.wall;
-    SetConsoleTextAttribute(hConsole, 7); // Default color
-    string activeItemsStatus = "Ativos: ";
-    bool hasActiveItem = false;
-
     // Salva a cor padrão para restaurar
     CONSOLE_SCREEN_BUFFER_INFO consoleInfo;
     GetConsoleScreenBufferInfo(hConsole, &consoleInfo);
     WORD originalColors = consoleInfo.wAttributes;
 
-    cout << activeItemsStatus; // Imprime "Ativos: "
+    // --- Linha de Status: Itens Ativos ---
+    cout << gameIcons.wall;
+    SetConsoleTextAttribute(hConsole, 7); // Cor padrão
 
-    if (std::chrono::duration_cast<std::chrono::seconds>(speedBoostEndTime - now).count() > 0) {
-        SetConsoleTextAttribute(hConsole, 14); // Amarelo Claro para Velocidade
-        cout << "[Velocidade:" << std::chrono::duration_cast<std::chrono::seconds>(speedBoostEndTime - now).count() << "s] ";
-        hasActiveItem = true;
+    int line_length = 0;
+    stringstream ss; // Usado para construir partes da string
+
+    // Imprime o rótulo e conta seu tamanho
+    string label = "Ativos: ";
+    cout << label;
+    line_length += label.length();
+
+    bool hasActiveItem = false;
+
+    // Verifica e imprime cada power-up ativo
+    long speed_seconds = duration_cast<seconds>(speedBoostEndTime - now).count();
+    if (speed_seconds > 0) {
+        ss.str(""); // Limpa o stringstream
+        ss << "[Velocidade:" << speed_seconds << "s] ";
+        string item_str = ss.str();
+        
+        SetConsoleTextAttribute(hConsole, 14); // Amarelo
+        cout << item_str;
         SetConsoleTextAttribute(hConsole, originalColors); // Restaura cor
+        
+        line_length += item_str.length();
+        hasActiveItem = true;
     }
-    // Verifica se o tiro extra está ativo por um power-up (não pela configuração base da nave)
-    bool extraShotPowerUpActive = (maxPlayerBulletsAllowed > chosenShipConfig.initialMaxBullets || (chosenShipConfig.initialMaxBullets > 1 && chosenShipConfig.type != ShipType::TYPE_2_BALANCED_EXTRA /*Exemplo, ajuste se necessário*/)) &&
-                                  std::chrono::duration_cast<std::chrono::seconds>(extraShotEndTime - now).count() > 0;
+
+    bool extraShotPowerUpActive = (maxPlayerBulletsAllowed > chosenShipConfig.initialMaxBullets) &&
+                                  duration_cast<seconds>(extraShotEndTime - now).count() > 0;
     if (extraShotPowerUpActive) {
-        SetConsoleTextAttribute(hConsole, 11); // Ciano Claro para Tiro Extra
-        cout << "[Tiro Extra:" << std::chrono::duration_cast<std::chrono::seconds>(extraShotEndTime - now).count() << "s (" << maxPlayerBulletsAllowed << ")] ";
-        hasActiveItem = true;
+        ss.str("");
+        ss << "[Tiro Extra:" << duration_cast<seconds>(extraShotEndTime - now).count() << "s (" << maxPlayerBulletsAllowed << ")] ";
+        string item_str = ss.str();
+
+        SetConsoleTextAttribute(hConsole, 11); // Ciano Claro
+        cout << item_str;
         SetConsoleTextAttribute(hConsole, originalColors);
+
+        line_length += item_str.length();
+        hasActiveItem = true;
     }
-    // Verifica se o tiro múltiplo está ativo por um power-up (não pela configuração base da nave)
+
     bool multiShotPowerUpActive = multiShotActive && !chosenShipConfig.initialMultiShotActive &&
-                                 std::chrono::duration_cast<std::chrono::seconds>(multiShotEndTime - now).count() > 0;
+                                 duration_cast<seconds>(multiShotEndTime - now).count() > 0;
     if (multiShotPowerUpActive) {
-        SetConsoleTextAttribute(hConsole, 13); // Roxo Claro para Tiro Múltiplo
-        cout << "[Tiro Multi:" << std::chrono::duration_cast<std::chrono::seconds>(multiShotEndTime - now).count() << "s] ";
-        hasActiveItem = true;
+        ss.str("");
+        ss << "[Tiro Multi:" << duration_cast<seconds>(multiShotEndTime - now).count() << "s] ";
+        string item_str = ss.str();
+
+        SetConsoleTextAttribute(hConsole, 13); // Roxo Claro
+        cout << item_str;
         SetConsoleTextAttribute(hConsole, originalColors);
+
+        line_length += item_str.length();
+        hasActiveItem = true;
     }
-    if (std::chrono::duration_cast<std::chrono::seconds>(enemyFreezeEndTime - now).count() > 0) {
-        SetConsoleTextAttribute(hConsole, 9);  // Azul Claro para Congelamento
-        cout << "[Congelado:" << std::chrono::duration_cast<std::chrono::seconds>(enemyFreezeEndTime - now).count() << "s] ";
-        hasActiveItem = true;
+
+    long freeze_seconds = duration_cast<seconds>(enemyFreezeEndTime - now).count();
+    if (freeze_seconds > 0) {
+        ss.str("");
+        ss << "[Congelado:" << freeze_seconds << "s] ";
+        string item_str = ss.str();
+
+        SetConsoleTextAttribute(hConsole, 9);  // Azul Claro
+        cout << item_str;
         SetConsoleTextAttribute(hConsole, originalColors);
+
+        line_length += item_str.length();
+        hasActiveItem = true;
     }
 
     if (!hasActiveItem) {
-        cout << "Nenhum";
+        string none_str = "Nenhum";
+        cout << none_str;
+        line_length += none_str.length();
     }
 
-    // Calcula o espaço restante na linha de status para preenchimento
-    // Esta parte é um pouco mais complexa porque o cout já aconteceu.
-    // Para um alinhamento perfeito, seria melhor construir toda a string de status primeiro.
-    // Por simplicidade, vamos apenas garantir que não exceda a largura.
-    // O ideal seria usar std::ostringstream para construir a linha de status completa e depois imprimir.
-    // Para agora, o preenchimento será após a última mensagem de status.
-    int currentConsolePos = 0; // Precisaria de GetConsoleCursorPosition ou similar
-                               // Ou, mais simples, calcular o comprimento do que foi impresso.
-    // Deixando o preenchimento como estava, mas a colorização é feita por partes.
-    // A linha abaixo que usa activeItemsStatus.substr() não vai funcionar bem com a impressão colorida por partes.
-    // Removendo o preenchimento complexo por enquanto, focando nas cores.
-    // cout << left << setw(LARGURA_MAPA - activeItemsStatus.length()) << ""; // Preenchimento
+    // Calcula e imprime o preenchimento para alinhar a borda direita
+    padding = LARGURA_MAPA - line_length;
+    if (padding > 0) {
+        cout << string(padding, ' ');
+    }
     cout << gameIcons.wall << "\n";
 
+    // --- Linha de Status: Vidas ---
     cout << gameIcons.wall;
-    SetConsoleTextAttribute(hConsole, 7);
-    cout << "Vidas: ";
+    SetConsoleTextAttribute(hConsole, 7); // Cor padrão
 
-    SetConsoleTextAttribute(hConsole, 12); // Vermelho claro para vidas (corações/símbolos)
+    line_length = 0; // Reseta o contador para a nova linha
+
+    label = "Vidas: ";
+    cout << label;
+    line_length += label.length();
+
+    string life_symbol = string(1, char(254)) + " "; // "■ "
+    line_length += currentVidas * life_symbol.length();
+
+    SetConsoleTextAttribute(hConsole, 12); // Vermelho claro para vidas
     for (int i = 0; i < currentVidas; ++i) {
-        cout << char(254) << " "; // char(254) é um bloco '■'. char(3) é '♥' em CP437.
+        cout << life_symbol;
     }
-    // Calcula o comprimento do conteúdo das vidas para preenchimento
-    // (considerando "Vidas: " e cada vida como "■ ")
-    int vidasContentLength = static_cast<int>(string("Vidas: ").length()) + (currentVidas * 2);
-    int remainingSpaceForLives = LARGURA_MAPA - vidasContentLength;
-    for (int i = 0; i < remainingSpaceForLives; ++i) {
-        cout << " ";
+    SetConsoleTextAttribute(hConsole, originalColors); // Restaura cor
+
+    // Calcula e imprime o preenchimento para a linha de vidas
+    padding = LARGURA_MAPA - line_length;
+    if (padding > 0) {
+        cout << string(padding, ' ');
     }
-    SetConsoleTextAttribute(hConsole, 7);
     cout << gameIcons.wall << "\n";
 
     cout << gameIcons.wall;
