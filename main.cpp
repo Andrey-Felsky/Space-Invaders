@@ -86,6 +86,11 @@ const int FPS = 30;
 const std::chrono::milliseconds frameDuration(1000 / FPS);
 
 void autoPlayInput(Player& botPlayer) {
+    // A IA não pode fazer nada se estiver morta.
+    if (botPlayer.vidas <= 0) {
+        return;
+    }
+
     auto now = high_resolution_clock::now();
 
     // A IA também precisa respeitar o cooldown de movimento da nave
@@ -566,8 +571,8 @@ int main() {
         // Only select for P2 if in two-player mode and P1 didn't press ESC
         if (currentGameMode == GameMode::TWO_PLAYER && players[0].shipConfig.type != ShipType::NONE) {
             if (currentDifficulty == Difficulty::AUTO) {
-                // Assign a default balanced ship to the bot (P2)
-                players[1].shipConfig = AllShipOptions[1]; // Assign "Nave Tática"
+                // Assign a random ship to the bot (P2)
+                players[1].shipConfig = AllShipOptions[rand() % AllShipOptions.size()];
             } else {
                 // Human P2 selects a ship
                 selectShip(1);
