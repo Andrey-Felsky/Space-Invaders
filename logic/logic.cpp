@@ -110,6 +110,26 @@ void checkEndOfGame() {
 }
 // --- End of placeholder implementations ---
 
+// Helper function to check collision with a player, allowing for different hitbox sizes.
+// hitboxWidth should be an odd number (1, 3, 5, etc.).
+bool checkPlayerCollision(int objectX, int objectY, const Player& player, int hitboxWidth) {
+    if (player.vidas <= 0) {
+        return false; // Cannot collide with a dead player.
+    }
+
+    // Check if the object is at the player's vertical level.
+    if (objectY != ALTURA_MAPA - 1) {
+        return false;
+    }
+
+    // Calculate the horizontal bounds for collision.
+    int halfWidth = hitboxWidth / 2;
+    int leftBound = player.x - halfWidth;
+    int rightBound = player.x + halfWidth;
+
+    return (objectX >= leftBound && objectX <= rightBound);
+}
+
 void checkCollisions() {
     auto now = std::chrono::high_resolution_clock::now();
 
@@ -221,7 +241,7 @@ void checkCollisions() {
         // 2. Checar colisão com os Jogadores (se não atingiu uma barreira)
         if (!enemyBulletHitSomething) {
             for (int p_idx = 0; p_idx < 2; ++p_idx) {
-                if (players[p_idx].vidas > 0 && tiroInimigoY == ALTURA_MAPA - 1 && tiroInimigoX >= players[p_idx].x - 1 && tiroInimigoX <= players[p_idx].x + 1) {
+                if (checkPlayerCollision(tiroInimigoX, tiroInimigoY, players[p_idx], 1)) { // 1x1 hitbox for damage
                     players[p_idx].vidas--;
                     enemyBulletHitSomething = true;
 
@@ -265,7 +285,7 @@ void checkCollisions() {
         // 2. Checar colisão com Jogadores
         if (!bulletHitSomething) {
             for (int p_idx = 0; p_idx < 2; ++p_idx) {
-                if (players[p_idx].vidas > 0 && bulletY == ALTURA_MAPA - 1 && bulletX >= players[p_idx].x - 1 && bulletX <= players[p_idx].x + 1) {
+                if (checkPlayerCollision(bulletX, bulletY, players[p_idx], 1)) { // 1x1 hitbox for damage
                     players[p_idx].vidas--;
                     bulletHitSomething = true;
                     players[p_idx].explosionActive = true;
@@ -318,7 +338,7 @@ void checkCollisions() {
 
     // --- Colisão do Jogador com Itens ---
     for (int p_idx = 0; p_idx < 2; ++p_idx) {
-        if (players[p_idx].vidas > 0 && itemDropActive && itemDropY == ALTURA_MAPA - 1 && itemDropX == players[p_idx].x) {
+        if (itemDropActive && checkPlayerCollision(itemDropX, itemDropY, players[p_idx], 3)) { // 1x3 hitbox for items
             // Apply item effect
             switch (itemDropType) {
                 case ItemType::EXTRA_LIFE: players[p_idx].vidas++; break;
