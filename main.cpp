@@ -153,19 +153,19 @@ void input(Player& p1, Player& p2) {
         auto now = high_resolution_clock::now(); // Pega o tempo atual para checar cooldown
 
         // --- Player 1 Controls (A, D, Space) ---
-        if (tecla == 'a' || tecla == 'A') {
+        if ((tecla == 'a' || tecla == 'A') && p1.vidas > 0) {
             if (duration_cast<milliseconds>(now - p1.lastMoveTime) >= p1.shipConfig.moveCooldown) {
                 if (p1.x > 0) p1.x--;
                 p1.lastMoveTime = now;
             }
         }
-        else if (tecla == 'd' || tecla == 'D') {
+        else if ((tecla == 'd' || tecla == 'D') && p1.vidas > 0) {
             if (duration_cast<milliseconds>(now - p1.lastMoveTime) >= p1.shipConfig.moveCooldown) {
                 if (p1.x < LARGURA_MAPA - 1) p1.x++;
                 p1.lastMoveTime = now;
             }
         }
-        else if (tecla == ' ') {
+        else if (tecla == ' ' && p1.vidas > 0) {
             if (p1.bullets.size() < static_cast<size_t>(p1.maxBulletsAllowed)) {
                 if (p1.multiShotActive) {
                     // Dispara 3 balas: centro, esquerda, direita (se possível)
@@ -183,19 +183,19 @@ void input(Player& p1, Player& p2) {
         else if (tecla == 0 || tecla == -32) { // Código especial para teclas de seta
             tecla = _getch(); // Pega o código real da tecla
 
-            if (tecla == 75) { // Seta para Esquerda
+            if (tecla == 75 && p2.vidas > 0) { // Seta para Esquerda
                 if (duration_cast<milliseconds>(now - p2.lastMoveTime) >= p2.shipConfig.moveCooldown) {
                     if (p2.x > 0) p2.x--;
                     p2.lastMoveTime = now;
                 }
             }
-            else if (tecla == 77) { // Seta para Direita
+            else if (tecla == 77 && p2.vidas > 0) { // Seta para Direita
                 if (duration_cast<milliseconds>(now - p2.lastMoveTime) >= p2.shipConfig.moveCooldown) {
                     if (p2.x < LARGURA_MAPA - 1) p2.x++;
                     p2.lastMoveTime = now;
                 }
             }
-            else if (tecla == 72) { // Seta para Cima (Atirar)
+            else if (tecla == 72 && p2.vidas > 0) { // Seta para Cima (Atirar)
                 if (p2.bullets.size() < static_cast<size_t>(p2.maxBulletsAllowed)) {
                     if (p2.multiShotActive) {
                         // Dispara 3 balas: centro, esquerda, direita (se possível)
