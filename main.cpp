@@ -12,6 +12,7 @@
 #include <limits> // Adicionado para std::numeric_limits em selectShip
 #include <iomanip> // Adicionado para std::setw e std::left
 
+#include "player/player.h"
 #include "mapa/mapa.h"
 #include "enemy/enemy.h"
 #include "logic/logic.h"
@@ -29,39 +30,30 @@ using namespace std::chrono;
 // que é incluído acima.
 
 // Barrier state
-// Barrier barriers[NUM_BARRIERS]; // Declarado em logic.h e definido em logic.cpp
+Player players[2];
 
 ShipConfig chosenShipConfig; // Guarda a configuração da nave selecionada pelo jogador
 
+GameMode currentGameMode = GameMode::TWO_PLAYER; // Default, will be set by menu
 Difficulty currentDifficulty = Difficulty::NORMAL; // Dificuldade padrão
 int currentItemDropChance = BASE_ITEM_DROP_CHANCE;
 std::chrono::milliseconds currentEnemyMoveInterval = BASE_ENEMY_MOVE_INTERVAL;
 
 char mapa[ALTURA_MAPA][LARGURA_MAPA];
-int naveX = LARGURA_MAPA / 2;
 std::chrono::milliseconds enemyMoveInterval; // Velocidade atual dos inimigos, modificada durante o jogo
 
 bool inimigoVivo[ENEMY_ARRAY_MAX_SIZE];
 int inimigos[ENEMY_ARRAY_MAX_SIZE][2];
 
-std::vector<std::pair<int, int>> playerBullets; // {x, y} for each bullet
-
-int score = 0;
 bool gameOver = false;
 bool playerWon = false; // Flag para determinar a tela final
 
 bool tiroInimigoAtivo = false;
 int tiroInimigoX = 0, tiroInimigoY = 0;
 
-int vidas = 3;
-
 bool itemDropActive = false;
 int itemDropX = 0, itemDropY = 0;
 ItemType itemDropType = ItemType::EXTRA_LIFE; // Default, will be randomized
-
-// Power-up state variables
-int maxPlayerBulletsAllowed = 1; // Normal limit is 1, increased by EXTRA_SHOT
-bool multiShotActive = false;
 
 std::chrono::high_resolution_clock::time_point speedBoostEndTime;
 std::chrono::high_resolution_clock::time_point extraShotEndTime;
@@ -71,10 +63,7 @@ std::chrono::high_resolution_clock::time_point enemyFreezeEndTime;
 // Explosion state variables
 bool explosionActiveEnemy = false;
 int explosionEnemyX = 0, explosionEnemyY = 0;
-bool explosionActivePlayer = false;
-int explosionPlayerX = 0, explosionPlayerY = 0;
 std::chrono::high_resolution_clock::time_point enemyExplosionStartTime;
-std::chrono::high_resolution_clock::time_point playerExplosionStartTime;
 
 int enemiesDefeatedCount = 0;
 
@@ -82,7 +71,6 @@ int enemiesDefeatedCount = 0;
 std::chrono::milliseconds originalEnemyMoveIntervalMs; // Será definido com base na dificuldade
  
 std::chrono::high_resolution_clock::time_point lastPlayerMoveTime; // Para controlar o cooldown de movimento do jogador
-
 const int FPS = 30;
 const std::chrono::milliseconds frameDuration(1000 / FPS);
 
@@ -99,12 +87,12 @@ void autoPlayInput() {
     // Prioridade 1: Desviar de tiros inimigos
     if (tiroInimigoAtivo && tiroInimigoY >= ALTURA_MAPA / 2) { // Só se preocupa com tiros na metade inferior do mapa
         // Se o tiro está vindo diretamente ou muito perto
-        if (abs(tiroInimigoX - naveX) <= 1) {
+        if (abs(tiroInimigoX - players[0].x) <= 1) {
             // Tenta mover para a direita, se não puder, move para a esquerda.
-            if (naveX < LARGURA_MAPA - 1) {
-                naveX++;
+            if (players[0].x < LARGURA_MAPA - 1) {
+                players[0].x++;
             } else {
-                naveX--;
+                players[0].x--;
             }
             lastPlayerMoveTime = now;
             return; // Decisão tomada, sai da função
@@ -113,10 +101,10 @@ void autoPlayInput() {
 
     // Prioridade 2: Coletar itens
     if (itemDropActive) {
-        if (itemDropX > naveX && naveX < LARGURA_MAPA - 1) {
-            naveX++;
-        } else if (itemDropX < naveX && naveX > 0) {
-            naveX--;
+        if (itemDropX > players[0].x && players[0].x < LARGURA_MAPA - 1) {
+            players[0].x++;
+        } else if (itemDropX < players[0].x && players[0].x > 0) {
+            players[0].x--;
         }
         lastPlayerMoveTime = now;
         // A IA também atirará enquanto coleta itens
@@ -136,51 +124,88 @@ void autoPlayInput() {
 
     if (targetX != -1) { // Se encontrou um alvo
         // Move para alinhar com o alvo
-        if (targetX > naveX && naveX < LARGURA_MAPA - 1) {
-            naveX++;
+        if (targetX > players[0].x && players[0].x < LARGURA_MAPA - 1) {
+            players[0].x++;
             lastPlayerMoveTime = now;
-        } else if (targetX < naveX && naveX > 0) {
-            naveX--;
+        } else if (targetX < players[0].x && players[0].x > 0) {
+            players[0].x--;
             lastPlayerMoveTime = now;
         } else { // Se já está alinhado (targetX == naveX)
             // Atira! (copiado da lógica de input do jogador)
-            if (playerBullets.size() < static_cast<size_t>(maxPlayerBulletsAllowed)) {
-                 playerBullets.push_back({naveX, ALTURA_MAPA - 2});
+            if (players[0].bullets.size() < static_cast<size_t>(players[0].maxBulletsAllowed)) { // Verifica o limite de balas
+                if (players[0].multiShotActive) {
+                    // Dispara 3 balas: centro, esquerda, direita (se possível)
+                    players[0].bullets.push_back({players[0].x, ALTURA_MAPA - 2});
+                    if (players[0].x > 0) players[0].bullets.push_back({players[0].x - 1, ALTURA_MAPA - 2});
+                    if (players[0].x < LARGURA_MAPA - 1) players[0].bullets.push_back({players[0].x + 1, ALTURA_MAPA - 2});
+                } else {
+                    // Dispara uma única bala
+                    players[0].bullets.push_back({players[0].x, ALTURA_MAPA - 2});
+                }
             }
         }
     }
 }
 
-void input() {
+void input(Player& p1, Player& p2) {
     if (_kbhit()) {
         char tecla = _getch();
         auto now = high_resolution_clock::now(); // Pega o tempo atual para checar cooldown
 
+        // --- Player 1 Controls (A, D, Space) ---
         if (tecla == 'a' || tecla == 'A') {
-            if (duration_cast<milliseconds>(now - lastPlayerMoveTime) >= chosenShipConfig.moveCooldown) {
-                if (naveX > 0) naveX--;
-                lastPlayerMoveTime = now; // Atualiza o tempo do último movimento
+            if (duration_cast<milliseconds>(now - p1.lastMoveTime) >= p1.shipConfig.moveCooldown) {
+                if (p1.x > 0) p1.x--;
+                p1.lastMoveTime = now;
             }
         }
         else if (tecla == 'd' || tecla == 'D') {
-            if (duration_cast<milliseconds>(now - lastPlayerMoveTime) >= chosenShipConfig.moveCooldown) {
-                if (naveX < LARGURA_MAPA - 1) naveX++;
-                lastPlayerMoveTime = now; // Atualiza o tempo do último movimento
+            if (duration_cast<milliseconds>(now - p1.lastMoveTime) >= p1.shipConfig.moveCooldown) {
+                if (p1.x < LARGURA_MAPA - 1) p1.x++;
+                p1.lastMoveTime = now;
             }
         }
         else if (tecla == ' ') {
-            if (playerBullets.size() < static_cast<size_t>(maxPlayerBulletsAllowed)) {
-                if (multiShotActive) {
-                    // Fire 3 bullets: center, left, right if possible
-                    playerBullets.push_back({naveX, ALTURA_MAPA - 2});
-                    if (naveX > 0) playerBullets.push_back({naveX - 1, ALTURA_MAPA - 2});
-                    if (naveX < LARGURA_MAPA - 1) playerBullets.push_back({naveX + 1, ALTURA_MAPA - 2});
-                    // Optional: Sort and unique to prevent exact overlaps if naveX is near edge and fires multiple
-                    std::sort(playerBullets.begin(), playerBullets.end());
-                    playerBullets.erase(std::unique(playerBullets.begin(), playerBullets.end()), playerBullets.end());
+            if (p1.bullets.size() < static_cast<size_t>(p1.maxBulletsAllowed)) {
+                if (p1.multiShotActive) {
+                    // Dispara 3 balas: centro, esquerda, direita (se possível)
+                    p1.bullets.push_back({p1.x, ALTURA_MAPA - 2});
+                    if (p1.x > 0) p1.bullets.push_back({p1.x - 1, ALTURA_MAPA - 2});
+                    if (p1.x < LARGURA_MAPA - 1) p1.bullets.push_back({p1.x + 1, ALTURA_MAPA - 2});
                 } else {
-                    // Fire single bullet
-                    playerBullets.push_back({naveX, ALTURA_MAPA - 2});
+                    // Dispara uma única bala
+                    p1.bullets.push_back({p1.x, ALTURA_MAPA - 2});
+                }
+            }
+        }
+
+        // --- Player 2 Controls (Arrow Keys) ---
+        else if (tecla == 0 || tecla == -32) { // Código especial para teclas de seta
+            tecla = _getch(); // Pega o código real da tecla
+
+            if (tecla == 75) { // Seta para Esquerda
+                if (duration_cast<milliseconds>(now - p2.lastMoveTime) >= p2.shipConfig.moveCooldown) {
+                    if (p2.x > 0) p2.x--;
+                    p2.lastMoveTime = now;
+                }
+            }
+            else if (tecla == 77) { // Seta para Direita
+                if (duration_cast<milliseconds>(now - p2.lastMoveTime) >= p2.shipConfig.moveCooldown) {
+                    if (p2.x < LARGURA_MAPA - 1) p2.x++;
+                    p2.lastMoveTime = now;
+                }
+            }
+            else if (tecla == 72) { // Seta para Cima (Atirar)
+                if (p2.bullets.size() < static_cast<size_t>(p2.maxBulletsAllowed)) {
+                    if (p2.multiShotActive) {
+                        // Dispara 3 balas: centro, esquerda, direita (se possível)
+                        p2.bullets.push_back({p2.x, ALTURA_MAPA - 2});
+                        if (p2.x > 0) p2.bullets.push_back({p2.x - 1, ALTURA_MAPA - 2});
+                        if (p2.x < LARGURA_MAPA - 1) p2.bullets.push_back({p2.x + 1, ALTURA_MAPA - 2});
+                    } else {
+                        // Dispara uma única bala
+                        p2.bullets.push_back({p2.x, ALTURA_MAPA - 2});
+                    }
                 }
             }
         }
@@ -196,7 +221,7 @@ void printCentered(const std::string& text, int width) {
     std::cout << std::string(padding_left, ' ') << text << std::string(padding_right, ' ');
 }
 
-void selectShip() {
+void selectShip(int playerIndex) {
     hideCursor();
 
     // Definir as configurações das naves
@@ -216,6 +241,10 @@ void selectShip() {
 
     while (true) {
         // Redesenha apenas se a seleção mudou
+        setCursorPosition(0, 0);
+        resetConsoleColor();
+        cout << "      JOGADOR " << playerIndex + 1 << ", ESCOLHA SUA NAVE!      " << endl;
+
         if (selected_option != prev_selected_option) {
             const ShipConfig& currentShip = shipOptions[selected_option];
             cleanScreen();
@@ -300,7 +329,7 @@ void selectShip() {
                     selected_option = (selected_option + 1) % shipOptions.size();
                 }
             } else if (key == 13) { // Enter key
-                chosenShipConfig = shipOptions[selected_option];
+                players[playerIndex].shipConfig = shipOptions[selected_option];
                 Beep(900, 100); // Som de confirmação
                 cleanScreen();
                 resetConsoleColor(); // Garante que a cor seja resetada ao sair
@@ -337,11 +366,11 @@ void initBarriers() {
 void game(){
     gameOver = false;
     playerWon = false; // Reseta a flag de vitoria
-    playerBullets.clear();
-    score = 0;
-    naveX = LARGURA_MAPA / 2;
-    vidas = 3;
-
+    
+    // Initialize players
+    players[0].init(1, LARGURA_MAPA / 4);
+    players[1].init(2, (LARGURA_MAPA / 4) * 3);
+    
     // Define os parâmetros do jogo com base na dificuldade selecionada
     switch (currentDifficulty) {
         case Difficulty::FACIL:
@@ -363,9 +392,11 @@ void game(){
     }
 
     // Aplica a configuração da nave escolhida
-    maxPlayerBulletsAllowed = chosenShipConfig.initialMaxBullets;
-    multiShotActive = chosenShipConfig.initialMultiShotActive;
-    lastPlayerMoveTime = high_resolution_clock::now(); // Inicializa para o primeiro movimento
+    for(int i = 0; i < 2; ++i) {
+        players[i].maxBulletsAllowed = players[i].shipConfig.initialMaxBullets;
+        players[i].multiShotActive = players[i].shipConfig.initialMultiShotActive;
+        players[i].lastMoveTime = high_resolution_clock::now();
+    }
 
     itemDropActive = false;
     itemDropType = ItemType::EXTRA_LIFE; // Reset
@@ -385,13 +416,23 @@ void game(){
     initBarriers();
 
     cleanScreen();
-    string nome = "Robo-Player";
+    string p1_name = "Jogador1";
+    string p2_name = "Jogador2";
     if (currentDifficulty != Difficulty::AUTO) {
-        cout << "Digite seu nome: ";
-        cin >> nome;
+        if (currentGameMode == GameMode::SINGLE_PLAYER) {
+            cout << "Digite seu nome: ";
+            cin >> p1_name;
+        } else { // TWO_PLAYER
+            cout << "Digite o nome do Jogador 1: ";
+            cin >> p1_name;
+            cout << "Digite o nome do Jogador 2: ";
+            cin >> p2_name;
+        }
         cin.ignore();
     } else {
-        cout << "Modo AUTO ativado. O jogador e " << nome << ".\n";
+        currentGameMode = GameMode::SINGLE_PLAYER; // AUTO mode is always single player
+        p1_name = "Robo-Player";
+        cout << "Modo AUTO ativado. O jogador e " << p1_name << ".\n";
         Sleep(2000); // Pausa para o usuário ler
     }
     auto gameStartTime = high_resolution_clock::now();
@@ -406,32 +447,22 @@ void game(){
         duration<float> elapsedTime = now - gameStartTime;
         float tempoDecorrido = elapsedTime.count();
 
-        // Check and manage active power-up timers
-        // Se o multi-shot estava ativo por um power-up e o tempo expirou, reverte para o base da nave
-        if (multiShotActive && multiShotActive != chosenShipConfig.initialMultiShotActive && now >= multiShotEndTime) {
-            multiShotActive = chosenShipConfig.initialMultiShotActive;
+        // Check and manage active power-up timers for both players
+        for(int i = 0; i < 2; ++i) {
+            if (players[i].multiShotActive && players[i].multiShotActive != players[i].shipConfig.initialMultiShotActive && now >= players[i].multiShotEndTime) {
+                players[i].multiShotActive = players[i].shipConfig.initialMultiShotActive;
+            }
+            if (players[i].maxBulletsAllowed > players[i].shipConfig.initialMaxBullets && now >= players[i].extraShotEndTime) {
+                players[i].maxBulletsAllowed = players[i].shipConfig.initialMaxBullets;
+            }
         }
-        // Se maxPlayerBulletsAllowed foi aumentado por um power-up e o tempo expirou, reverte para o base da nave
-        if (maxPlayerBulletsAllowed > chosenShipConfig.initialMaxBullets && now >= extraShotEndTime) {
-            maxPlayerBulletsAllowed = chosenShipConfig.initialMaxBullets;
-        }
-
-        // Speed boost for player bullets doesn't have a direct timer here, it affects bullet update speed.
-        // Enemy freeze is checked in enemy movement logic.
-        // If "Aumento de Velocidade" meant faster enemy movement (a debuff pickup), we'd manage it here too.
-        // For now, assuming "Aumento de Velocidade" is player bullet speed (handled in updatePlayerBullets) or player movement (not implemented yet).
-        // If it was enemy speed change:
-        // if (enemyMoveInterval != originalEnemyMoveIntervalMs && now >= speedBoostEndTime) { // Assuming speedBoostEndTime was for enemy speed
-        //     enemyMoveInterval = originalEnemyMoveIntervalMs;
-        // }
-
 
         if (now - lastFrameTime >= frameDuration) {
             // --- LÓGICA DE UPDATE ---
             if (currentDifficulty == Difficulty::AUTO) {
                 autoPlayInput(); // A IA joga
             } else {
-                input(); // O jogador humano joga
+                input(players[0], players[1]); // O jogador humano joga
             }
 
             updatePlayerBullets();
@@ -442,7 +473,7 @@ void game(){
 
             // --- RENDERIZAÇÃO ---
             resetCursorPosition(); // Usa o reset de cursor para evitar piscar durante o jogo
-            render(score, tempoDecorrido, vidas);
+            render(players, tempoDecorrido);
             lastFrameTime = now;
         }
 
@@ -464,14 +495,19 @@ void game(){
     auto gameEndTime = high_resolution_clock::now();
     duration<float> finalDuration = gameEndTime - gameStartTime;
 
-    // Salva o score antes de exibir a tela final
-    saveScore(nome, score, finalDuration.count());
+    // Salva o score de ambos os jogadores
+    if (currentGameMode == GameMode::SINGLE_PLAYER || currentDifficulty == Difficulty::AUTO) {
+        saveScore(p1_name, players[0].score, finalDuration.count());
+    } else { // TWO_PLAYER
+        saveScore(p1_name, players[0].score, finalDuration.count());
+        saveScore(p2_name, players[1].score, finalDuration.count());
+    }
 
     // Exibe a tela de vitória ou derrota
     if (playerWon) {
-        showVictoryScreen(score, finalDuration.count());
+        showVictoryScreen(players[0].score + players[1].score, finalDuration.count());
     } else {
-        showDefeatScreen(score, finalDuration.count());
+        showDefeatScreen(players[0].score + players[1].score, finalDuration.count());
     }
 
     // Espera por input do usuário antes de voltar ao menu
@@ -493,9 +529,18 @@ int main() {
                 // Assume-se que se "Jogar" for escolhido, menu() retorna.
                 // Se "Sair" for escolhido, menu() chama exit(0).
 
-        selectShip(); // Chama a seleção de nave APÓS o menu principal e ANTES do jogo.
-        if (chosenShipConfig.type != ShipType::NONE) { // Verifica se uma nave foi realmente selecionada (não ESC)
-            game();       // Inicia o jogo com a nave escolhida.
+        // Ship selection for both players
+        selectShip(0);
+        // Only select for P2 if in two-player mode and P1 didn't press ESC
+        if (currentGameMode == GameMode::TWO_PLAYER && players[0].shipConfig.type != ShipType::NONE) {
+            selectShip(1);
+        }
+
+        // Check if selection was completed (no ESC pressed)
+        bool p1_selected = players[0].shipConfig.type != ShipType::NONE;
+        bool p2_selected = (currentGameMode == GameMode::TWO_PLAYER) ? players[1].shipConfig.type != ShipType::NONE : true;
+        if (p1_selected && p2_selected) {
+            game(); // Inicia o jogo com a(s) nave(s) escolhida(s).
         }
         // Se ESC foi pressionado em selectShip(), o loop volta para o menu principal.
     }

@@ -5,6 +5,7 @@
 #include <cstdlib> // For rand()
 #include <algorithm> // For std::min, std::remove_if
 
+extern GameMode currentGameMode;
 // Global variable definitions (declared in logic.h)
 std::chrono::high_resolution_clock::time_point lastEnemyShotTime;
 
@@ -14,12 +15,14 @@ Barrier barriers[NUM_BARRIERS];
 // --- Placeholder implementations for functions declared in logic.h ---
 // You should replace these with your actual implementations if they exist.
 void updatePlayerBullets() {
-    for (auto& bullet : playerBullets) {
-        bullet.second--; // Move bullet up
+    for (int i = 0; i < 2; ++i) {
+        for (auto& bullet : players[i].bullets) {
+            bullet.second--; // Move bullet up
+        }
+        players[i].bullets.erase(std::remove_if(players[i].bullets.begin(), players[i].bullets.end(),
+                                           [](const auto& b){ return b.second < 0; }),
+                            players[i].bullets.end());
     }
-    playerBullets.erase(std::remove_if(playerBullets.begin(), playerBullets.end(),
-                                       [](const auto& b){ return b.second < 0; }),
-                        playerBullets.end());
 }
 void updateTiroInimigo() {
     auto now = std::chrono::high_resolution_clock::now();
@@ -70,11 +73,20 @@ void checkEndOfGame() {
     }
 
     // Condição de derrota: Vidas acabaram
-    if (vidas <= 0) {
-        gameOver = true;
-        playerWon = false;
-        return;
+    if (currentGameMode == GameMode::SINGLE_PLAYER) {
+        if (players[0].vidas <= 0) {
+            gameOver = true;
+            playerWon = false;
+            return;
+        }
+    } else { // TWO_PLAYER
+        if (players[0].vidas <= 0 && players[1].vidas <= 0) {
+            gameOver = true;
+            playerWon = false;
+            return;
+        }
     }
+
     bool allEnemiesDefeated = true;
     for (int i = 0; i < TOTAL_INITIAL_ENEMIES; ++i) {
         if (inimigoVivo[i]) {
@@ -95,61 +107,63 @@ void checkCollisions() {
     auto now = std::chrono::high_resolution_clock::now();
 
     // --- Colisões de Tiros do Jogador ---
-    for (auto itBullet = playerBullets.begin(); itBullet != playerBullets.end(); ) {
-        bool bulletHitSomething = false;
-        int bulletX = itBullet->first;
-        int bulletY = itBullet->second;
+    for (int p_idx = 0; p_idx < 2; ++p_idx) {
+        for (auto itBullet = players[p_idx].bullets.begin(); itBullet != players[p_idx].bullets.end(); ) {
+            bool bulletHitSomething = false;
+            int bulletX = itBullet->first;
+            int bulletY = itBullet->second;
 
-        // 1. Checar colisão com Barreiras
-        for (int i = 0; i < NUM_BARRIERS; ++i) {
-            if (bulletX >= barriers[i].x && bulletX < barriers[i].x + BARRIER_WIDTH &&
-                bulletY >= barriers[i].y && bulletY < barriers[i].y + BARRIER_HEIGHT) {
-                
-                int barrierCol = bulletX - barriers[i].x;
-                int barrierRow = bulletY - barriers[i].y;
+            // 1. Checar colisão com Barreiras
+            for (int i = 0; i < NUM_BARRIERS; ++i) {
+                if (bulletX >= barriers[i].x && bulletX < barriers[i].x + BARRIER_WIDTH &&
+                    bulletY >= barriers[i].y && bulletY < barriers[i].y + BARRIER_HEIGHT) {
+                    
+                    int barrierCol = bulletX - barriers[i].x;
+                    int barrierRow = bulletY - barriers[i].y;
 
-                if (barriers[i].shape[barrierRow][barrierCol] != ' ') {
-                    barriers[i].shape[barrierRow][barrierCol] = ' '; // Danifica a barreira
+                    if (barriers[i].shape[barrierRow][barrierCol] != ' ') {
+                        barriers[i].shape[barrierRow][barrierCol] = ' '; // Danifica a barreira
+                        bulletHitSomething = true;
+                        break; // A bala só pode atingir uma barreira
+                    }
+                }
+            }
+
+            if (bulletHitSomething) {
+                itBullet = players[p_idx].bullets.erase(itBullet);
+                continue; // Pula para a próxima bala
+            }
+
+            // 2. Checar colisão com Inimigos (se não atingiu uma barreira)
+            for (int i = 0; i < TOTAL_INITIAL_ENEMIES; ++i) {
+                if (inimigoVivo[i] && bulletX == inimigos[i][0] && bulletY == inimigos[i][1]) {
+                    inimigoVivo[i] = false;
+                    players[p_idx].score += 10;
+                    enemiesDefeatedCount++;
+
+                    explosionActiveEnemy = true;
+                    explosionEnemyX = inimigos[i][0];
+                    explosionEnemyY = inimigos[i][1];
+                    enemyExplosionStartTime = now;
+                    Beep(ENEMY_EXPLOSION_FREQ, ENEMY_EXPLOSION_DUR);
+
+                    if (rand() % 100 < currentItemDropChance) {
+                        itemDropActive = true;
+                        itemDropX = inimigos[i][0];
+                        itemDropY = inimigos[i][1];
+                        itemDropType = static_cast<ItemType>(rand() % 6);
+                    }
+
                     bulletHitSomething = true;
-                    break; // A bala só pode atingir uma barreira
+                    break; // A bala só pode atingir um inimigo
                 }
             }
-        }
 
-        if (bulletHitSomething) {
-            itBullet = playerBullets.erase(itBullet);
-            continue; // Pula para a próxima bala
-        }
-
-        // 2. Checar colisão com Inimigos (se não atingiu uma barreira)
-        for (int i = 0; i < TOTAL_INITIAL_ENEMIES; ++i) {
-            if (inimigoVivo[i] && bulletX == inimigos[i][0] && bulletY == inimigos[i][1]) {
-                inimigoVivo[i] = false;
-                score += 10;
-                enemiesDefeatedCount++;
-
-                explosionActiveEnemy = true;
-                explosionEnemyX = inimigos[i][0];
-                explosionEnemyY = inimigos[i][1];
-                enemyExplosionStartTime = now;
-                Beep(ENEMY_EXPLOSION_FREQ, ENEMY_EXPLOSION_DUR);
-
-                if (rand() % 100 < currentItemDropChance) {
-                    itemDropActive = true;
-                    itemDropX = inimigos[i][0];
-                    itemDropY = inimigos[i][1];
-                    itemDropType = static_cast<ItemType>(rand() % 6);
-                }
-
-                bulletHitSomething = true;
-                break; // A bala só pode atingir um inimigo
+            if (bulletHitSomething) {
+                itBullet = players[p_idx].bullets.erase(itBullet);
+            } else {
+                ++itBullet; // Avança apenas se nada foi atingido
             }
-        }
-
-        if (bulletHitSomething) {
-            itBullet = playerBullets.erase(itBullet);
-        } else {
-            ++itBullet; // Avança apenas se nada foi atingido
         }
     }
 
@@ -173,19 +187,24 @@ void checkCollisions() {
             }
         }
 
-        // 2. Checar colisão com o Jogador (se não atingiu uma barreira)
-        if (!enemyBulletHitSomething && tiroInimigoY == ALTURA_MAPA - 1 && tiroInimigoX >= naveX - 1 && tiroInimigoX <= naveX + 1) { // Checa uma área maior para a nave
-            vidas--;
-            enemyBulletHitSomething = true;
+        // 2. Checar colisão com os Jogadores (se não atingiu uma barreira)
+        if (!enemyBulletHitSomething) {
+            for (int p_idx = 0; p_idx < 2; ++p_idx) {
+                if (players[p_idx].vidas > 0 && tiroInimigoY == ALTURA_MAPA - 1 && tiroInimigoX >= players[p_idx].x - 1 && tiroInimigoX <= players[p_idx].x + 1) {
+                    players[p_idx].vidas--;
+                    enemyBulletHitSomething = true;
 
-            explosionActivePlayer = true;
-            explosionPlayerX = naveX;
-            explosionPlayerY = ALTURA_MAPA - 1;
-            playerExplosionStartTime = now;
-            Beep(PLAYER_EXPLOSION_FREQ, PLAYER_EXPLOSION_DUR);
+                    players[p_idx].explosionActive = true;
+                    players[p_idx].explosionX = players[p_idx].x;
+                    players[p_idx].explosionY = ALTURA_MAPA - 1;
+                    players[p_idx].explosionStartTime = now;
+                    Beep(PLAYER_EXPLOSION_FREQ, PLAYER_EXPLOSION_DUR);
 
-            if (vidas <= 0) {
-                gameOver = true;
+                    if (players[0].vidas <= 0 && players[1].vidas <= 0) {
+                        gameOver = true;
+                    }
+                    break; // Bala atinge apenas um jogador
+                }
             }
         }
 
@@ -226,18 +245,21 @@ void checkCollisions() {
     }
 
     // --- Colisão do Jogador com Itens ---
-    if (itemDropActive && itemDropY == ALTURA_MAPA - 1 && itemDropX == naveX) {
-        // Apply item effect
-        switch (itemDropType) {
-            case ItemType::EXTRA_LIFE: vidas++; break;
-            case ItemType::SPEED_BOOST: speedBoostEndTime = now + SPEED_BOOST_DURATION; break;
-            case ItemType::EXTRA_SHOT: maxPlayerBulletsAllowed = EXTRA_SHOT_MAX_BULLETS; extraShotEndTime = now + EXTRA_SHOT_DURATION; break;
-            case ItemType::MULTI_SHOT: multiShotActive = true; multiShotEndTime = now + MULTI_SHOT_DURATION; break;
-            case ItemType::BONUS_POINTS: score += BONUS_POINTS_AMOUNT; break;
-            case ItemType::ENEMY_FREEZE: enemyFreezeEndTime = now + ENEMY_FREEZE_DURATION; break;
+    for (int p_idx = 0; p_idx < 2; ++p_idx) {
+        if (players[p_idx].vidas > 0 && itemDropActive && itemDropY == ALTURA_MAPA - 1 && itemDropX == players[p_idx].x) {
+            // Apply item effect
+            switch (itemDropType) {
+                case ItemType::EXTRA_LIFE: players[p_idx].vidas++; break;
+                case ItemType::SPEED_BOOST: players[p_idx].speedBoostEndTime = now + SPEED_BOOST_DURATION; break;
+                case ItemType::EXTRA_SHOT: players[p_idx].maxBulletsAllowed = EXTRA_SHOT_MAX_BULLETS; players[p_idx].extraShotEndTime = now + EXTRA_SHOT_DURATION; break;
+                case ItemType::MULTI_SHOT: players[p_idx].multiShotActive = true; players[p_idx].multiShotEndTime = now + MULTI_SHOT_DURATION; break;
+                case ItemType::BONUS_POINTS: players[p_idx].score += BONUS_POINTS_AMOUNT; break;
+                case ItemType::ENEMY_FREEZE: enemyFreezeEndTime = now + ENEMY_FREEZE_DURATION; break;
+            }
+            itemDropActive = false;
+            Beep(700, 70); // Som de item coletado
+            break; // Item é coletado por apenas um jogador
         }
-        itemDropActive = false;
-        Beep(700, 70); // Som de item coletado
     }
 }
 
@@ -250,7 +272,9 @@ void updateExplosions() {
     }
 
     // Desativa a explosão do jogador se a duração já passou
-    if (explosionActivePlayer && (now - playerExplosionStartTime >= EXPLOSION_DURATION)) {
-        explosionActivePlayer = false;
+    for (int i = 0; i < 2; ++i) {
+        if (players[i].explosionActive && (now - players[i].explosionStartTime >= EXPLOSION_DURATION)) {
+            players[i].explosionActive = false;
+        }
     }
 }

@@ -15,44 +15,35 @@ using namespace std::chrono;
 
 // Presumindo que ShipConfig e chosenShipConfig são declarados externamente
 // e acessíveis aqui, conforme configurado anteriormente (em mapa.h e main.cpp)
-extern ShipConfig chosenShipConfig;
 
 GameElements gameIcons;
 HANDLE hConsole = GetStdHandle(STD_OUTPUT_HANDLE);
 
-void render(int score, float tempo, int currentVidas)
+void render(const Player players[2], float tempo)
 {
     resetConsoleColor(); // Garante que a cor padrão seja usada no início da renderização
     auto now = high_resolution_clock::now();
 
-    cout << gameIcons.wall;
-    for (int x = 0; x < LARGURA_MAPA; x++)
-        cout << gameIcons.wall;
-    cout << gameIcons.wall << "\n";
-
-    stringstream ssScore;
-    ssScore << "Score: " << score;
-    string scoreStr = ssScore.str();
-
+    // --- Linha de Score e Tempo ---
     stringstream ssTempo;
     ssTempo << fixed << setprecision(1) << tempo << "s"; // Use fixed and setprecision for consistent float formatting
     string tempoStr = "Tempo: " + ssTempo.str();
 
-    int occupiedLength = scoreStr.length() + tempoStr.length();
-    int padding = LARGURA_MAPA - occupiedLength;
-
     cout << gameIcons.wall;
-    resetConsoleColor();
-    cout << scoreStr; // Score string
-
-    for (int i = 0; i < padding; ++i)
-    {
-        cout << " ";
+    if (currentGameMode == GameMode::SINGLE_PLAYER) {
+        string score_str = "Score: " + to_string(players[0].score);
+        string mid_section = " " + tempoStr + " ";
+        int padding_len = LARGURA_MAPA - score_str.length() - mid_section.length();
+        string padding(padding_len > 0 ? padding_len : 0, ' ');
+        cout << score_str << padding << mid_section;
+    } else { // TWO_PLAYER
+        string p1_score_str = "P1: " + to_string(players[0].score);
+        string p2_score_str = "P2: " + to_string(players[1].score);
+        string mid_section = " " + tempoStr + " ";
+        int padding_len = LARGURA_MAPA - p1_score_str.length() - mid_section.length() - p2_score_str.length();
+        string padding(padding_len > 0 ? padding_len : 0, ' ');
+        cout << p1_score_str << padding << mid_section << p2_score_str;
     }
-
-    resetConsoleColor();
-    cout << tempoStr; // Time string
-
     cout << gameIcons.wall << "\n";
 
     cout << gameIcons.wall;
@@ -92,28 +83,28 @@ void render(int score, float tempo, int currentVidas)
         }
     }
 
-    // Draw player bullets
-    for (const auto &bullet : playerBullets)
-    {
-        if (bullet.second >= 0 && bullet.second < ALTURA_MAPA && bullet.first >= 0 && bullet.first < LARGURA_MAPA)
-            mapa[bullet.second][bullet.first] = chosenShipConfig.bulletChar; // Usa o caractere de tiro da nave escolhida
+    // Draw bullets for both players
+    for (int i = 0; i < 2; ++i) {
+        for (const auto &bullet : players[i].bullets) {
+            if (bullet.second >= 0 && bullet.second < ALTURA_MAPA && bullet.first >= 0 && bullet.first < LARGURA_MAPA)
+                mapa[bullet.second][bullet.first] = players[i].shipConfig.bulletChar;
+        }
     }
 
     if (tiroInimigoAtivo && tiroInimigoY >= 0 && tiroInimigoY < ALTURA_MAPA)
         mapa[tiroInimigoY][tiroInimigoX] = '|';
 
-    // --- Renderiza a skin da nave escolhida ---
-    if (!chosenShipConfig.skin.empty())
-    { // Verifica se a skin não está vazia
-        int skinLength = chosenShipConfig.skin.length();
-        int startX = naveX - skinLength / 2;
-
-        for (int i = 0; i < skinLength; ++i)
-        {
-            int currentX = startX + i;
-            if (currentX >= 0 && currentX < LARGURA_MAPA)
-            {
-                mapa[ALTURA_MAPA - 1][currentX] = chosenShipConfig.skin[i];
+    // Render player ships
+    int numPlayersToRender = (currentGameMode == GameMode::SINGLE_PLAYER) ? 1 : 2;
+    for (int i = 0; i < numPlayersToRender; ++i) {
+        if (players[i].vidas > 0) { // Only render if alive
+            if (!players[i].shipConfig.skin.empty()) {
+                int startX = players[i].x - players[i].shipConfig.skin.length() / 2;
+                for (size_t j = 0; j < players[i].shipConfig.skin.length(); ++j) {
+                    if (startX + j >= 0 && startX + j < LARGURA_MAPA) {
+                        mapa[ALTURA_MAPA - 1][startX + j] = players[i].shipConfig.skin[j];
+                    }
+                }
             }
         }
     } // --- Fim da renderização da skin da nave ---
@@ -124,10 +115,11 @@ void render(int score, float tempo, int currentVidas)
         mapa[explosionEnemyY][explosionEnemyX] = 'X';
     }
 
-    if (explosionActivePlayer)
-    {
-        // A lógica de desativar a explosão foi movida para updateExplosions() em logic.cpp
-        mapa[explosionPlayerY][explosionPlayerX] = '@';
+    // Render player explosions
+    for (int i = 0; i < 2; ++i) {
+        if (players[i].explosionActive) {
+            mapa[players[i].explosionY][players[i].explosionX] = '@';
+        }
     }
 
     if (itemDropActive && itemDropY < ALTURA_MAPA && itemDropX < LARGURA_MAPA)
@@ -169,30 +161,29 @@ void render(int score, float tempo, int currentVidas)
         {
             char c = mapa[y][x];
 
-            // A verificação da nave do jogador deve vir primeiro, pois se baseia na posição, não apenas no caractere.
-            bool isPlayerShipChar = false;
-            if (y == ALTURA_MAPA - 1 && !chosenShipConfig.skin.empty())
-            {
-                int skinLength = chosenShipConfig.skin.length();
-                int startX = naveX - skinLength / 2;
-                if (x >= startX && x < startX + skinLength)
-                {
-                    isPlayerShipChar = true;
+            int player_index_at_char = -1;
+            // Check if the character is part of a player's ship
+            for (int i = 0; i < 2; ++i) {
+                if (players[i].vidas > 0 && y == ALTURA_MAPA - 1 && !players[i].shipConfig.skin.empty()) {
+                    int skinLength = players[i].shipConfig.skin.length();
+                    int startX = players[i].x - skinLength / 2;
+                    if (x >= startX && x < startX + skinLength) {
+                        player_index_at_char = i;
+                        break;
+                    }
                 }
             }
 
-            // Lógica de coloração unificada para evitar que uma cor sobrescreva a outra.
-            if (isPlayerShipChar)
-            {
-                setConsoleColor(gameIcons.spaceshipColor);
-            }
-            else if (c == gameIcons.enemy)
-            {
+
+            // Lógica de coloração unificada para evitar que uma cor sobrescreva a outra. (Prioridade: Nave > Inimigo > Tiro > Item)
+            if (player_index_at_char != -1) {
+                setConsoleColor(players[player_index_at_char].shipConfig.bulletColor); // Cor da nave
+            } else if (c == gameIcons.enemy) {
                 setConsoleColor(gameIcons.enemyColor); // Agora esta cor será aplicada corretamente.
-            }
-            else if (c == chosenShipConfig.bulletChar)
-            {
-                setConsoleColor(chosenShipConfig.bulletColor);
+            } else if (c == players[0].shipConfig.bulletChar) { // Tiro do P1
+                setConsoleColor(players[0].shipConfig.bulletColor);
+            } else if (currentGameMode == GameMode::TWO_PLAYER && c == players[1].shipConfig.bulletChar) { // Tiro do P2 (apenas em multiplayer)
+                setConsoleColor(players[1].shipConfig.bulletColor);
             }
             else if (c == '|')
             {
@@ -242,124 +233,113 @@ void render(int score, float tempo, int currentVidas)
         cout << gameIcons.wall;
     cout << gameIcons.wall << "\n";
 
-    // --- Linha de Status: Itens Ativos ---
+    // --- Status Bar ---
+    if (currentGameMode == GameMode::SINGLE_PLAYER) {
+        // --- Vidas (Single Player) ---
+        cout << gameIcons.wall;
+        int line_len = 0;
+        string vidas_label = "Vidas: ";
+        setConsoleColor(12); cout << vidas_label; line_len += vidas_label.length();
+        for(int i = 0; i < players[0].vidas; ++i) {
+            cout << string(1, char(254)) << " ";
+            line_len += 2;
+        }
+        resetConsoleColor();
+        cout << string(LARGURA_MAPA - line_len > 0 ? LARGURA_MAPA - line_len : 0, ' ');
+        cout << gameIcons.wall << "\n";
+
+        // --- Power-ups (Single Player) ---
+        cout << gameIcons.wall;
+        resetConsoleColor(); // Cor padrão
+        stringstream ss; // Usado para construir partes da string
+        string label = "Ativos: ";
+        cout << label;
+        int powerup_line_length = label.length();
+        bool hasActiveItem = false;
+
+        long speed_seconds = duration_cast<seconds>(players[0].speedBoostEndTime - now).count();
+        if (speed_seconds > 0) {
+            ss.str(""); ss << "[Velocidade:" << speed_seconds << "s] "; string item_str = ss.str();
+            setConsoleColor(14); cout << item_str; resetConsoleColor(); powerup_line_length += item_str.length(); hasActiveItem = true;
+        }
+        long extra_shot_seconds = duration_cast<seconds>(players[0].extraShotEndTime - now).count();
+        if (players[0].maxBulletsAllowed > players[0].shipConfig.initialMaxBullets && extra_shot_seconds > 0) {
+            ss.str(""); ss << "[Tiro Extra:" << extra_shot_seconds << "s] "; string item_str = ss.str();
+            setConsoleColor(11); cout << item_str; resetConsoleColor(); powerup_line_length += item_str.length(); hasActiveItem = true;
+        }
+        long multi_shot_seconds = duration_cast<seconds>(players[0].multiShotEndTime - now).count();
+        if (players[0].multiShotActive && !players[0].shipConfig.initialMultiShotActive && multi_shot_seconds > 0) {
+            ss.str(""); ss << "[Tiro Multi:" << multi_shot_seconds << "s] "; string item_str = ss.str();
+            setConsoleColor(13); cout << item_str; resetConsoleColor(); powerup_line_length += item_str.length(); hasActiveItem = true;
+        }
+        long freeze_seconds = duration_cast<seconds>(enemyFreezeEndTime - now).count();
+        if (freeze_seconds > 0) {
+            if (hasActiveItem) { ss.str(""); ss << " "; string item_str = ss.str(); cout << item_str; powerup_line_length += item_str.length(); }
+            string freeze_status = "[Congelado:" + to_string(freeze_seconds) + "s]";
+            powerup_line_length += freeze_status.length();
+            setConsoleColor(9); cout << freeze_status; resetConsoleColor();
+            hasActiveItem = true;
+        }
+        if (!hasActiveItem) {
+            string none_str = "Nenhum";
+            cout << none_str;
+            powerup_line_length += none_str.length();
+        }
+        cout << string(LARGURA_MAPA - powerup_line_length > 0 ? LARGURA_MAPA - powerup_line_length : 0, ' ');
+        cout << gameIcons.wall << "\n";
+
+    } else { // TWO_PLAYER
+        // --- Player 1 Status Line ---
+        cout << gameIcons.wall;
+        int p1_line_len = 0;
+        string p1_vidas_label = "P1 Vidas: ";
+        setConsoleColor(12); cout << p1_vidas_label; p1_line_len += p1_vidas_label.length();
+        for(int i = 0; i < players[0].vidas; ++i) { cout << string(1, char(254)) << " "; p1_line_len += 2; }
+        resetConsoleColor();
+        long p1_extra_shot_seconds = duration_cast<seconds>(players[0].extraShotEndTime - now).count();
+        if (players[0].maxBulletsAllowed > players[0].shipConfig.initialMaxBullets && p1_extra_shot_seconds > 0) {
+            string s = "| "; setConsoleColor(7); cout << s; p1_line_len += s.length();
+            s = "Tiro Extra:" + to_string(p1_extra_shot_seconds) + "s "; setConsoleColor(11); cout << s; p1_line_len += s.length(); resetConsoleColor();
+        }
+        long p1_multi_shot_seconds = duration_cast<seconds>(players[0].multiShotEndTime - now).count();
+        if (players[0].multiShotActive && !players[0].shipConfig.initialMultiShotActive && p1_multi_shot_seconds > 0) {
+            string s = "| "; setConsoleColor(7); cout << s; p1_line_len += s.length();
+            s = "Tiro Multi:" + to_string(p1_multi_shot_seconds) + "s "; setConsoleColor(13); cout << s; p1_line_len += s.length(); resetConsoleColor();
+        }
+        cout << string(LARGURA_MAPA - p1_line_len > 0 ? LARGURA_MAPA - p1_line_len : 0, ' ');
+        cout << gameIcons.wall << "\n";
+
+        // --- Player 2 Status Line ---
+        cout << gameIcons.wall;
+        int p2_line_len = 0;
+        string p2_vidas_label = "P2 Vidas: ";
+        setConsoleColor(12); cout << p2_vidas_label; p2_line_len += p2_vidas_label.length();
+        for(int i = 0; i < players[1].vidas; ++i) { cout << string(1, char(254)) << " "; p2_line_len += 2; }
+        resetConsoleColor();
+        long p2_extra_shot_seconds = duration_cast<seconds>(players[1].extraShotEndTime - now).count();
+        if (players[1].maxBulletsAllowed > players[1].shipConfig.initialMaxBullets && p2_extra_shot_seconds > 0) {
+            string s = "| "; setConsoleColor(7); cout << s; p2_line_len += s.length();
+            s = "Tiro Extra:" + to_string(p2_extra_shot_seconds) + "s "; setConsoleColor(11); cout << s; p2_line_len += s.length(); resetConsoleColor();
+        }
+        long p2_multi_shot_seconds = duration_cast<seconds>(players[1].multiShotEndTime - now).count();
+        if (players[1].multiShotActive && !players[1].shipConfig.initialMultiShotActive && p2_multi_shot_seconds > 0) {
+            string s = "| "; setConsoleColor(7); cout << s; p2_line_len += s.length();
+            s = "Tiro Multi:" + to_string(p2_multi_shot_seconds) + "s "; setConsoleColor(13); cout << s; p2_line_len += s.length(); resetConsoleColor();
+        }
+        cout << string(LARGURA_MAPA - p2_line_len > 0 ? LARGURA_MAPA - p2_line_len : 0, ' ');
+        cout << gameIcons.wall << "\n";
+    }
+
+    // --- Global Status Line (Freeze) ---
     cout << gameIcons.wall;
-    resetConsoleColor(); // Cor padrão
-
-    int line_length = 0;
-    stringstream ss; // Usado para construir partes da string
-
-    // Imprime o rótulo e conta seu tamanho
-    string label = "Ativos: ";
-    cout << label;
-    line_length += label.length();
-
-    bool hasActiveItem = false;
-
-    // Verifica e imprime cada power-up ativo
-    long speed_seconds = duration_cast<seconds>(speedBoostEndTime - now).count();
-    if (speed_seconds > 0)
-    {
-        ss.str(""); // Limpa o stringstream
-        ss << "[Velocidade:" << speed_seconds << "s] ";
-        string item_str = ss.str();
-
-        setConsoleColor(14); // Amarelo
-        cout << item_str;
-        resetConsoleColor(); // Restaura cor
-
-        line_length += item_str.length();
-        hasActiveItem = true;
-    }
-
-    bool extraShotPowerUpActive = (maxPlayerBulletsAllowed > chosenShipConfig.initialMaxBullets) &&
-                                  duration_cast<seconds>(extraShotEndTime - now).count() > 0;
-    if (extraShotPowerUpActive)
-    {
-        ss.str("");
-        ss << "[Tiro Extra:" << duration_cast<seconds>(extraShotEndTime - now).count() << "s (" << maxPlayerBulletsAllowed << ")] ";
-        string item_str = ss.str();
-
-        setConsoleColor(11); // Ciano Claro
-        cout << item_str;
-        resetConsoleColor();
-
-        line_length += item_str.length();
-        hasActiveItem = true;
-    }
-
-    bool multiShotPowerUpActive = multiShotActive && !chosenShipConfig.initialMultiShotActive &&
-                                  duration_cast<seconds>(multiShotEndTime - now).count() > 0;
-    if (multiShotPowerUpActive)
-    {
-        ss.str("");
-        ss << "[Tiro Multi:" << duration_cast<seconds>(multiShotEndTime - now).count() << "s] ";
-        string item_str = ss.str();
-
-        setConsoleColor(13); // Roxo Claro
-        cout << item_str;
-        resetConsoleColor();
-
-        line_length += item_str.length();
-        hasActiveItem = true;
-    }
-
+    int global_line_len = 0;
     long freeze_seconds = duration_cast<seconds>(enemyFreezeEndTime - now).count();
-    if (freeze_seconds > 0)
-    {
-        ss.str("");
-        ss << "[Congelado:" << freeze_seconds << "s] ";
-        string item_str = ss.str();
-
-        setConsoleColor(9); // Azul Claro
-        cout << item_str;
-        resetConsoleColor();
-
-        line_length += item_str.length();
-        hasActiveItem = true;
+    if (freeze_seconds > 0) {
+        string freeze_status = "Inimigos Congelados: " + to_string(freeze_seconds) + "s";
+        setConsoleColor(9); cout << freeze_status; resetConsoleColor();
+        global_line_len += freeze_status.length();
     }
-
-    if (!hasActiveItem)
-    {
-        string none_str = "Nenhum";
-        cout << none_str;
-        line_length += none_str.length();
-    }
-
-    // Calcula e imprime o preenchimento para alinhar a borda direita
-    padding = LARGURA_MAPA - line_length;
-    if (padding > 0)
-    {
-        cout << string(padding, ' ');
-    }
-    cout << gameIcons.wall << "\n";
-
-    // --- Linha de Status: Vidas ---
-    cout << gameIcons.wall;
-    resetConsoleColor(); // Cor padrão
-
-    line_length = 0; // Reseta o contador para a nova linha
-
-    label = "Vidas: ";
-    cout << label;
-    line_length += label.length();
-
-    string life_symbol = string(1, char(254)) + " "; // "■ "
-    line_length += currentVidas * life_symbol.length();
-
-    setConsoleColor(12); // Vermelho claro para vidas
-    for (int i = 0; i < currentVidas; ++i)
-    {
-        cout << life_symbol;
-    }
-    resetConsoleColor(); // Restaura cor
-
-    // Calcula e imprime o preenchimento para a linha de vidas
-    padding = LARGURA_MAPA - line_length;
-    if (padding > 0)
-    {
-        cout << string(padding, ' ');
-    }
+    cout << string(LARGURA_MAPA - global_line_len > 0 ? LARGURA_MAPA - global_line_len : 0, ' ');
     cout << gameIcons.wall << "\n";
 
     cout << gameIcons.wall;

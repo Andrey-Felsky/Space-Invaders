@@ -61,6 +61,12 @@ enum class Difficulty {
     AUTO
 };
 
+// Game mode
+enum class GameMode {
+    SINGLE_PLAYER,
+    TWO_PLAYER
+};
+
 // Base values that will be modified by difficulty
 const std::chrono::milliseconds BASE_ENEMY_MOVE_INTERVAL(500);
 const int BASE_ITEM_DROP_CHANCE = 25; // % chance

@@ -50,19 +50,40 @@ void printMenuTitle(int shinePosition)
 
 // Variável global de dificuldade definida em main.cpp
 extern Difficulty currentDifficulty;
+extern GameMode currentGameMode;
 
 
 void exibirInstrucoes()
 {
     cleanScreen();
-    setConsoleColor(7);
+    setConsoleColor(11); // Ciano claro para o título
     std::cout << "\n\n";
-    std::cout << "   === INSTRUCOES ===\n\n";
-    std::cout << "   - Use as teclas 'A' e 'D' para mover a nave.\n";
-    std::cout << "   - Pressione 'ESPACO' para atirar.\n";
-    std::cout << "   - Derrote todos os inimigos para vencer.\n";
-    std::cout << "   - Evite ser atingido pelos inimigos ou deixar que eles cheguem a sua base.\n";
-    std::cout << "   - Colete power-ups para obter vantagens temporarias.\n\n";
+    std::cout << "   ==================== INSTRUCOES ====================\n\n";
+    setConsoleColor(14); // Amarelo para subtítulos
+    std::cout << "   OBJETIVO:\n";
+    setConsoleColor(7); // Branco para texto normal
+    std::cout << "   - Derrote todos os inimigos para vencer a partida.\n";
+    std::cout << "   - Nao deixe os inimigos invadirem sua base (chegarem ao chao).\n";
+    std::cout << "   - O jogo termina se ambos os jogadores perderem todas as vidas.\n\n";
+    
+    setConsoleColor(14);
+    std::cout << "   CONTROLES - JOGADOR 1:\n";
+    setConsoleColor(7);
+    std::cout << "   - Mover: Teclas 'A' e 'D'   |   Atirar: Tecla 'ESPACO'\n\n";
+
+    setConsoleColor(14);
+    std::cout << "   CONTROLES - JOGADOR 2:\n";
+    setConsoleColor(7);
+    std::cout << "   - Mover: Setas Esquerda/Direita   |   Atirar: Seta para Cima\n\n";
+
+    setConsoleColor(14);
+    std::cout << "   POWER-UPS:\n";
+    setConsoleColor(7);
+    std::cout << "   - Mova sua nave para coletar os itens que caem dos inimigos!\n\n";
+
+    setConsoleColor(11);
+    std::cout << "   ====================================================\n\n";
+    setConsoleColor(7);
     std::cout << "   Pressione qualquer tecla para voltar ao menu...";
     _getch(); // Espera por qualquer tecla
 }
@@ -159,7 +180,7 @@ void selectDifficulty()
 void menu()
 {
     hideCursor(); // Usa a função de console_utils.h
-    std::vector<std::string> options = {"Jogar", "Dificuldade", "Instrucoes", "Ranking", "Sair"};
+    std::vector<std::string> options = {"Jogar (1P)", "Jogar (2P)", "Dificuldade", "Instrucoes", "Ranking", "Sair"};
     int selected_option = 0;
     int prev_selected_option = -1; // Para detectar mudança na seleção
     char key;
@@ -234,24 +255,29 @@ void menu()
                 Beep(900, 100); // Som de confirmação
                 switch (selected_option)
                 {
-                case 0: // Jogar
+                case 0: // Jogar (1P)
+                    currentGameMode = GameMode::SINGLE_PLAYER;
+                    resetConsoleColor();
+                    return;
+                case 1: // Jogar (2P)
+                    currentGameMode = GameMode::TWO_PLAYER;
                     resetConsoleColor(); // Garante que a cor seja resetada ao sair do menu
                     return;
-                case 1: // Dificuldade
+                case 2: // Dificuldade
                     resetConsoleColor(); // Garante que a cor seja resetada antes de entrar no submenu
                     selectDifficulty();
                     cleanScreen(); // Após sair de um submenu, limpa a tela
                     redrawTitle = true;   // e força o redesenho de tudo.
                     redrawOptions = true;
                     break;
-                case 2: // Instrucoes
+                case 3: // Instrucoes
                     exibirInstrucoes();
                     resetConsoleColor(); // Garante que a cor seja resetada antes de entrar no submenu
                     cleanScreen();
                     redrawTitle = true;
                     redrawOptions = true;
                     break;
-                case 3: // Ranking
+                case 4: // Ranking
                     showRanking();
                     std::cout << "\n\nPressione qualquer tecla para voltar ao menu...";
                     resetConsoleColor(); // Garante que a cor seja resetada antes de esperar input
@@ -260,7 +286,7 @@ void menu()
                     redrawTitle = true;
                     redrawOptions = true;
                     break;
-                case 4: // Sair
+                case 5: // Sair
                     Beep(300, 200); // Som de saída
                     cleanScreen();
                     setConsoleColor(7); // Define a cor para branco

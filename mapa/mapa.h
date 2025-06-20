@@ -4,18 +4,17 @@
 
 #include "../utils/constants.h"
 #include <vector>
-#include <string>  // Para std::string em ShipConfig
+#include <string>
 #include <utility> // For std::pair
 
+struct Player; // Forward declaration to break circular dependency
+ 
 extern char mapa[ALTURA_MAPA][LARGURA_MAPA];
-extern std::vector<std::pair<int, int>> playerBullets;
 extern bool inimigoVivo[ENEMY_ARRAY_MAX_SIZE];
 extern int inimigos[ENEMY_ARRAY_MAX_SIZE][2];
 
 extern bool tiroInimigoAtivo;
 extern int tiroInimigoX, tiroInimigoY;
-
-extern int naveX;
 
 // --- Declaração externa para ShipConfig e seu tipo ---
 // Estas definições DEVEM ser idênticas às de main.cpp
@@ -49,8 +48,8 @@ extern std::chrono::high_resolution_clock::time_point speedBoostEndTime;
 extern std::chrono::high_resolution_clock::time_point extraShotEndTime;
 extern std::chrono::high_resolution_clock::time_point multiShotEndTime;
 extern std::chrono::high_resolution_clock::time_point enemyFreezeEndTime;
-extern int maxPlayerBulletsAllowed; // For displaying status of extra shot
+extern GameMode currentGameMode;
 
-void render(int score, float tempo, int currentVidas);
+void render(const Player players[2], float tempo);
 
 #endif
