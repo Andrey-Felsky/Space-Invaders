@@ -228,8 +228,10 @@ void menu()
                 switch (selected_option)
                 {
                 case 0: // Jogar
+                    resetConsoleColor(); // Garante que a cor seja resetada ao sair do menu
                     return;
                 case 1: // Dificuldade
+                    resetConsoleColor(); // Garante que a cor seja resetada antes de entrar no submenu
                     selectDifficulty();
                     cleanScreen(); // Após sair de um submenu, limpa a tela
                     redrawTitle = true;   // e força o redesenho de tudo.
@@ -237,6 +239,7 @@ void menu()
                     break;
                 case 2: // Instrucoes
                     exibirInstrucoes();
+                    resetConsoleColor(); // Garante que a cor seja resetada antes de entrar no submenu
                     cleanScreen();
                     redrawTitle = true;
                     redrawOptions = true;
@@ -244,6 +247,7 @@ void menu()
                 case 3: // Ranking
                     showRanking();
                     std::cout << "\n\nPressione qualquer tecla para voltar ao menu...";
+                    resetConsoleColor(); // Garante que a cor seja resetada antes de esperar input
                     _getch();
                     cleanScreen();
                     redrawTitle = true;

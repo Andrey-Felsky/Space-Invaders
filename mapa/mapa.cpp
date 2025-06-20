@@ -22,6 +22,7 @@ HANDLE hConsole = GetStdHandle(STD_OUTPUT_HANDLE);
 
 void render(int score, float tempo, int currentVidas)
 {
+    resetConsoleColor(); // Garante que a cor padrão seja usada no início da renderização
     auto now = high_resolution_clock::now();
 
     cout << gameIcons.wall;
@@ -41,7 +42,7 @@ void render(int score, float tempo, int currentVidas)
     int padding = LARGURA_MAPA - occupiedLength;
 
     cout << gameIcons.wall;
-    SetConsoleTextAttribute(hConsole, 7);
+    resetConsoleColor();
     cout << scoreStr; // Score string
 
     for (int i = 0; i < padding; ++i)
@@ -49,7 +50,7 @@ void render(int score, float tempo, int currentVidas)
         cout << " ";
     }
 
-    SetConsoleTextAttribute(hConsole, 7);
+    resetConsoleColor();
     cout << tempoStr; // Time string
 
     cout << gameIcons.wall << "\n";

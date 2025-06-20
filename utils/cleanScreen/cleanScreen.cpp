@@ -28,7 +28,7 @@ void cleanScreen() {
 
     // Definir os atributos do buffer (cor do texto e do fundo).
     if (!FillConsoleOutputAttribute(hConsole,         // Handle para o buffer da tela do console
-                                    csbi.wAttributes, // Atributos de caractere a serem usados
+                                    7,                // Força o atributo para branco sobre preto (padrão)
                                     dwConSize,        // Número de células para definir o atributo
                                     coordScreen,      // Coordenadas da primeira célula
                                     &cCharsWritten)) // Recebe o número de caracteres escritos

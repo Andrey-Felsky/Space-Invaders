@@ -256,10 +256,12 @@ void selectShip() {
             setCursorPosition(menuStartX, 10 + shipOptions.size());
             std::cout << (char)186 << std::string(menuWidth, ' ') << (char)186;
             setCursorPosition(menuStartX, 11 + shipOptions.size());
-            std::cout << (char)186 << " "; setConsoleColor(11); std::cout << std::left << std::setw(menuWidth - 2) << currentShip.description; resetConsoleColor(); std::cout << (char)186;
+            std::string desc_line = " " + currentShip.description;
+            std::cout << (char)186; setConsoleColor(11); std::cout << std::left << std::setw(menuWidth) << desc_line; resetConsoleColor(); std::cout << (char)186;
             setCursorPosition(menuStartX, 12 + shipOptions.size());
             std::string attributes = std::string("Atributos: Movimento ") + (currentShip.moveCooldown.count() == 50 ? "Rapido" : "Normal") + " (" + std::to_string(currentShip.moveCooldown.count()) + "ms), " + (currentShip.initialMultiShotActive ? "Tiro Multiplo" : std::to_string(currentShip.initialMaxBullets) + " Tiro Max");
-            std::cout << (char)186 << " "; setConsoleColor(11); std::cout << std::left << std::setw(menuWidth - 2) << attributes; resetConsoleColor(); std::cout << (char)186;
+            std::string attr_line = " " + attributes;
+            std::cout << (char)186; setConsoleColor(11); std::cout << std::left << std::setw(menuWidth) << attr_line; resetConsoleColor(); std::cout << (char)186;
             setCursorPosition(menuStartX, 13 + shipOptions.size());
             std::cout << (char)186 << std::string(menuWidth, ' ') << (char)186;
             setCursorPosition(menuStartX, 14 + shipOptions.size());
@@ -285,10 +287,12 @@ void selectShip() {
             } else if (key == 13) { // Enter key
                 chosenShipConfig = shipOptions[selected_option];
                 cleanScreen();
+                resetConsoleColor(); // Garante que a cor seja resetada ao sair
                 return; // Exit ship selection
             } else if (key == 27) { // ESC key
                 chosenShipConfig = {ShipType::NONE, "", "", std::chrono::milliseconds(0), 0, "", 0, ' ', false}; // Set to NONE
                 cleanScreen();
+                resetConsoleColor(); // Garante que a cor seja resetada ao sair
                 return; 
             }
         }
