@@ -22,21 +22,8 @@
 using namespace std;
 using namespace std::chrono;
 
-// --- NOVAS DEFINIÇÕES E GLOBAIS PARA SELEÇÃO DE NAVE ---
-enum class ShipType {
-    TYPE_1_FAST_SINGLE,    // Nave 1: Rápida, 1 tiro
-    TYPE_2_BALANCED_EXTRA, // Nave 2: Normal, Tiro Extra (2 balas na tela)
-    TYPE_3_BALANCED_MULTI  // Nave 3: Normal, Tiro Múltiplo
-};
-
-struct ShipConfig {
-    ShipType type;
-    std::string name;
-    std::string description;
-    std::chrono::milliseconds moveCooldown; // Menor = mais rápido
-    int initialMaxBullets;                  // Quantos tiros na tela por vez (ou "rajadas" para multi-tiro)
-    bool initialMultiShotActive;            // Se o tiro múltiplo é padrão para esta nave
-};
+// As definições de ShipType e ShipConfig agora vêm de "mapa/mapa.h"
+// que é incluído acima.
 
 ShipConfig chosenShipConfig; // Guarda a configuração da nave selecionada pelo jogador
 char mapa[ALTURA_MAPA][LARGURA_MAPA];
@@ -136,17 +123,17 @@ void selectShip() {
 
     switch (choice_char) {
         case '1':
-            chosenShipConfig = {ShipType::TYPE_1_FAST_SINGLE, "Nave Agil", "Um tiro por vez, se movimenta muito rapido.", std::chrono::milliseconds(50), 1, false};
+            chosenShipConfig = {ShipType::TYPE_1_FAST_SINGLE, "Nave Agil", "Um tiro por vez, se movimenta muito rapido.", std::chrono::milliseconds(50), 1, "-^-", 10, '\'', false}; // 10: Verde Claro, Tiro: '
             break;
         case '2':
-            chosenShipConfig = {ShipType::TYPE_2_BALANCED_EXTRA, "Nave Tática", "Tiro Extra (2 balas na tela).", std::chrono::milliseconds(100), 2, false};
+            chosenShipConfig = {ShipType::TYPE_2_BALANCED_EXTRA, "Nave Tática", "Tiro Extra (2 balas na tela).", std::chrono::milliseconds(100), 2, "-O-", 11, '*', false}; // 11: Ciano Claro, Tiro: *
             break;
         case '3':
-            chosenShipConfig = {ShipType::TYPE_3_BALANCED_MULTI, "Nave Destruidora", "Tiro Multiplo.", std::chrono::milliseconds(100), 1, true};
+            chosenShipConfig = {ShipType::TYPE_3_BALANCED_MULTI, "Nave Destruidora", "Tiro Multiplo.", std::chrono::milliseconds(100), 1, "-W-", 14, 'o', true}; // 14: Amarelo Claro, Tiro: o
             break;
         default:
             cout << "Escolha invalida. Usando Nave Agil por padrao.\n";
-            chosenShipConfig = {ShipType::TYPE_1_FAST_SINGLE, "Nave Agil", "Um tiro por vez, se movimenta muito rapido.", std::chrono::milliseconds(50), 1, false};
+            chosenShipConfig = {ShipType::TYPE_1_FAST_SINGLE, "Nave Agil", "Um tiro por vez, se movimenta muito rapido.", std::chrono::milliseconds(50), 1, "-^-", 10, '\'', false}; // Padrão: Verde Claro, Tiro: '
             Sleep(1500); // Dá tempo para o usuário ler a mensagem
             break;
     }
@@ -271,7 +258,7 @@ int main() {
 
     // Inicializa com uma nave padrão. selectShip() irá sobrescrever isso.
     // Necessário caso haja um caminho no menu que pule a seleção e vá direto para o jogo (improvável com a estrutura atual).
-    chosenShipConfig = {ShipType::TYPE_1_FAST_SINGLE, "Nave Agil", "Um tiro por vez, se movimenta muito rapido.", std::chrono::milliseconds(50), 1, false};
+    chosenShipConfig = {ShipType::TYPE_1_FAST_SINGLE, "Nave Agil", "Um tiro por vez, se movimenta muito rapido.", std::chrono::milliseconds(50), 1, "-^-", 10, '\'', false}; // Padrão: Verde Claro, Tiro: '
 
     while (true) {
         menu(); // Função do menu/menu.h.

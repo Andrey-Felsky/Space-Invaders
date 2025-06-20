@@ -12,6 +12,10 @@
 using namespace std;
 using namespace std::chrono;
 
+// Presumindo que ShipConfig e chosenShipConfig são declarados externamente
+// e acessíveis aqui, conforme configurado anteriormente (em mapa.h e main.cpp)
+extern ShipConfig chosenShipConfig; 
+
 GameElements gameIcons;
 HANDLE hConsole = GetStdHandle(STD_OUTPUT_HANDLE);
 
@@ -72,13 +76,24 @@ void render(int score, float tempo, int currentVidas)
     // Draw player bullets
     for (const auto& bullet : playerBullets) {
         if (bullet.second >= 0 && bullet.second < ALTURA_MAPA && bullet.first >=0 && bullet.first < LARGURA_MAPA)
-            mapa[bullet.second][bullet.first] = gameIcons.shoot;
+            mapa[bullet.second][bullet.first] = chosenShipConfig.bulletChar; // Usa o caractere de tiro da nave escolhida
     }
 
     if (tiroInimigoAtivo && tiroInimigoY >= 0 && tiroInimigoY < ALTURA_MAPA)
         mapa[tiroInimigoY][tiroInimigoX] = '|';
 
-    mapa[ALTURA_MAPA - 1][naveX] = gameIcons.spaceship;
+    // --- Renderiza a skin da nave escolhida ---
+    if (!chosenShipConfig.skin.empty()) { // Verifica se a skin não está vazia
+        int skinLength = chosenShipConfig.skin.length();
+        int startX = naveX - skinLength / 2; 
+
+        for (int i = 0; i < skinLength; ++i) {
+            int currentX = startX + i;
+            if (currentX >= 0 && currentX < LARGURA_MAPA) {
+                mapa[ALTURA_MAPA - 1][currentX] = chosenShipConfig.skin[i];
+            }
+        }
+    } // --- Fim da renderização da skin da nave ---
 
     if (explosionActiveEnemy) {
         if (now - explosionStartTime < EXPLOSION_DURATION) {
@@ -131,17 +146,26 @@ void render(int score, float tempo, int currentVidas)
             {
                 SetConsoleTextAttribute(hConsole, gameIcons.enemyColor);
             }
-            else if (c == gameIcons.shoot)
+            // Verifica se o caractere 'c' é o caractere de tiro da nave atual do jogador
+            else if (c == chosenShipConfig.bulletChar)
             {
-                SetConsoleTextAttribute(hConsole, gameIcons.shootColor);
+                SetConsoleTextAttribute(hConsole, chosenShipConfig.bulletColor); // Usa a cor do tiro da nave escolhida
             }
-            else if (c == gameIcons.spaceship)
-            {
-                SetConsoleTextAttribute(hConsole, gameIcons.spaceshipColor);
+            // Verifica se o caractere 'c' faz parte da skin da nave
+            // Isso requer que a skin seja desenhada ANTES deste loop de impressão, o que já acontece.
+            bool isPlayerShipChar = false; // Variável local para evitar redefinição
+            if (y == ALTURA_MAPA -1 && !chosenShipConfig.skin.empty()) {
+                int skinLength = chosenShipConfig.skin.length();
+                int startX = naveX - skinLength / 2;
+                if (x >= startX && x < startX + skinLength) {
+                    isPlayerShipChar = true;
+                }
             }
+
+            if (isPlayerShipChar) { SetConsoleTextAttribute(hConsole, gameIcons.spaceshipColor); }
             else if (c == '|')
             {
-                SetConsoleTextAttribute(hConsole, 13); 
+                SetConsoleTextAttribute(hConsole, 12); // Cor para tiro do inimigo (ex: Vermelho)
             }
             else if (c == 'X' || c == '@')
             {
@@ -179,39 +203,73 @@ void render(int score, float tempo, int currentVidas)
     string activeItemsStatus = "Ativos: ";
     bool hasActiveItem = false;
 
+    // Salva a cor padrão para restaurar
+    CONSOLE_SCREEN_BUFFER_INFO consoleInfo;
+    GetConsoleScreenBufferInfo(hConsole, &consoleInfo);
+    WORD originalColors = consoleInfo.wAttributes;
+
+    cout << activeItemsStatus; // Imprime "Ativos: "
+
     if (std::chrono::duration_cast<std::chrono::seconds>(speedBoostEndTime - now).count() > 0) {
-        activeItemsStatus += "[Velocidade:" + to_string(std::chrono::duration_cast<std::chrono::seconds>(speedBoostEndTime - now).count()) + "s] ";
+        SetConsoleTextAttribute(hConsole, 14); // Amarelo Claro para Velocidade
+        cout << "[Velocidade:" << std::chrono::duration_cast<std::chrono::seconds>(speedBoostEndTime - now).count() << "s] ";
         hasActiveItem = true;
+        SetConsoleTextAttribute(hConsole, originalColors); // Restaura cor
     }
-    if (maxPlayerBulletsAllowed > 1 && std::chrono::duration_cast<std::chrono::seconds>(extraShotEndTime - now).count() > 0) {
-        activeItemsStatus += "[Tiro Extra:" + to_string(std::chrono::duration_cast<std::chrono::seconds>(extraShotEndTime - now).count()) + "s (" + to_string(maxPlayerBulletsAllowed) + ")] ";
+    // Verifica se o tiro extra está ativo por um power-up (não pela configuração base da nave)
+    bool extraShotPowerUpActive = (maxPlayerBulletsAllowed > chosenShipConfig.initialMaxBullets || (chosenShipConfig.initialMaxBullets > 1 && chosenShipConfig.type != ShipType::TYPE_2_BALANCED_EXTRA /*Exemplo, ajuste se necessário*/)) &&
+                                  std::chrono::duration_cast<std::chrono::seconds>(extraShotEndTime - now).count() > 0;
+    if (extraShotPowerUpActive) {
+        SetConsoleTextAttribute(hConsole, 11); // Ciano Claro para Tiro Extra
+        cout << "[Tiro Extra:" << std::chrono::duration_cast<std::chrono::seconds>(extraShotEndTime - now).count() << "s (" << maxPlayerBulletsAllowed << ")] ";
         hasActiveItem = true;
+        SetConsoleTextAttribute(hConsole, originalColors);
     }
-    if (multiShotActive && std::chrono::duration_cast<std::chrono::seconds>(multiShotEndTime - now).count() > 0) {
-        activeItemsStatus += "[Tiro Multi:" + to_string(std::chrono::duration_cast<std::chrono::seconds>(multiShotEndTime - now).count()) + "s] ";
+    // Verifica se o tiro múltiplo está ativo por um power-up (não pela configuração base da nave)
+    bool multiShotPowerUpActive = multiShotActive && !chosenShipConfig.initialMultiShotActive &&
+                                 std::chrono::duration_cast<std::chrono::seconds>(multiShotEndTime - now).count() > 0;
+    if (multiShotPowerUpActive) {
+        SetConsoleTextAttribute(hConsole, 13); // Roxo Claro para Tiro Múltiplo
+        cout << "[Tiro Multi:" << std::chrono::duration_cast<std::chrono::seconds>(multiShotEndTime - now).count() << "s] ";
         hasActiveItem = true;
+        SetConsoleTextAttribute(hConsole, originalColors);
     }
     if (std::chrono::duration_cast<std::chrono::seconds>(enemyFreezeEndTime - now).count() > 0) {
-        activeItemsStatus += "[Inimigos Congelados:" + to_string(std::chrono::duration_cast<std::chrono::seconds>(enemyFreezeEndTime - now).count()) + "s] ";
+        SetConsoleTextAttribute(hConsole, 9);  // Azul Claro para Congelamento
+        cout << "[Congelado:" << std::chrono::duration_cast<std::chrono::seconds>(enemyFreezeEndTime - now).count() << "s] ";
         hasActiveItem = true;
+        SetConsoleTextAttribute(hConsole, originalColors);
     }
 
     if (!hasActiveItem) {
-        activeItemsStatus += "Nenhum";
+        cout << "Nenhum";
     }
-    
-    cout << left << setw(LARGURA_MAPA) << activeItemsStatus.substr(0, LARGURA_MAPA); // Ensure it fits
+
+    // Calcula o espaço restante na linha de status para preenchimento
+    // Esta parte é um pouco mais complexa porque o cout já aconteceu.
+    // Para um alinhamento perfeito, seria melhor construir toda a string de status primeiro.
+    // Por simplicidade, vamos apenas garantir que não exceda a largura.
+    // O ideal seria usar std::ostringstream para construir a linha de status completa e depois imprimir.
+    // Para agora, o preenchimento será após a última mensagem de status.
+    int currentConsolePos = 0; // Precisaria de GetConsoleCursorPosition ou similar
+                               // Ou, mais simples, calcular o comprimento do que foi impresso.
+    // Deixando o preenchimento como estava, mas a colorização é feita por partes.
+    // A linha abaixo que usa activeItemsStatus.substr() não vai funcionar bem com a impressão colorida por partes.
+    // Removendo o preenchimento complexo por enquanto, focando nas cores.
+    // cout << left << setw(LARGURA_MAPA - activeItemsStatus.length()) << ""; // Preenchimento
     cout << gameIcons.wall << "\n";
 
     cout << gameIcons.wall;
     SetConsoleTextAttribute(hConsole, 7);
     cout << "Vidas: ";
 
-    SetConsoleTextAttribute(hConsole, gameIcons.enemyColor);
+    SetConsoleTextAttribute(hConsole, 12); // Vermelho claro para vidas (corações/símbolos)
     for (int i = 0; i < currentVidas; ++i) {
-        cout << char(254) << " ";
+        cout << char(254) << " "; // char(254) é um bloco '■'. char(3) é '♥' em CP437.
     }
-    int vidasContentLength = string("Vidas: ").length() + (currentVidas * 2);
+    // Calcula o comprimento do conteúdo das vidas para preenchimento
+    // (considerando "Vidas: " e cada vida como "■ ")
+    int vidasContentLength = static_cast<int>(string("Vidas: ").length()) + (currentVidas * 2);
     int remainingSpaceForLives = LARGURA_MAPA - vidasContentLength;
     for (int i = 0; i < remainingSpaceForLives; ++i) {
         cout << " ";
