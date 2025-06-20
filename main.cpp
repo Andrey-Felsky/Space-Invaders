@@ -27,8 +27,14 @@ using namespace std::chrono;
 // que é incluído acima.
 
 ShipConfig chosenShipConfig; // Guarda a configuração da nave selecionada pelo jogador
+
+Difficulty currentDifficulty = Difficulty::NORMAL; // Dificuldade padrão
+int currentItemDropChance = BASE_ITEM_DROP_CHANCE;
+std::chrono::milliseconds currentEnemyMoveInterval = BASE_ENEMY_MOVE_INTERVAL;
+
 char mapa[ALTURA_MAPA][LARGURA_MAPA];
 int naveX = LARGURA_MAPA / 2;
+std::chrono::milliseconds enemyMoveInterval; // Velocidade atual dos inimigos, modificada durante o jogo
 
 bool inimigoVivo[ENEMY_ARRAY_MAX_SIZE];
 int inimigos[ENEMY_ARRAY_MAX_SIZE][2];
@@ -58,7 +64,7 @@ std::chrono::high_resolution_clock::time_point multiShotEndTime;
 std::chrono::high_resolution_clock::time_point enemyFreezeEndTime;
 
 // This will be used to revert enemy speed after a speed boost or freeze
-std::chrono::milliseconds originalEnemyMoveIntervalMs = INITIAL_ENEMY_MOVE_INTERVAL;
+std::chrono::milliseconds originalEnemyMoveIntervalMs; // Será definido com base na dificuldade
  
 std::chrono::high_resolution_clock::time_point lastPlayerMoveTime; // Para controlar o cooldown de movimento do jogador
 
@@ -150,6 +156,22 @@ void game(){
     naveX = LARGURA_MAPA / 2;
     vidas = 3;
 
+    // Define os parâmetros do jogo com base na dificuldade selecionada
+    switch (currentDifficulty) {
+        case Difficulty::FACIL:
+            currentItemDropChance = BASE_ITEM_DROP_CHANCE + 15; // 40%
+            currentEnemyMoveInterval = BASE_ENEMY_MOVE_INTERVAL + std::chrono::milliseconds(150); // Mais lento
+            break;
+        case Difficulty::NORMAL:
+            currentItemDropChance = BASE_ITEM_DROP_CHANCE; // 25%
+            currentEnemyMoveInterval = BASE_ENEMY_MOVE_INTERVAL; // Normal
+            break;
+        case Difficulty::DIFICIL:
+            currentItemDropChance = BASE_ITEM_DROP_CHANCE - 10; // 15%
+            currentEnemyMoveInterval = BASE_ENEMY_MOVE_INTERVAL - std::chrono::milliseconds(150); // Mais rápido
+            break;
+    }
+
     // Aplica a configuração da nave escolhida
     maxPlayerBulletsAllowed = chosenShipConfig.initialMaxBullets;
     multiShotActive = chosenShipConfig.initialMultiShotActive;
@@ -158,9 +180,9 @@ void game(){
     itemDropActive = false;
     itemDropType = ItemType::EXTRA_LIFE; // Reset
 
-    enemiesDefeatedCount = 0;
-    enemyMoveInterval = INITIAL_ENEMY_MOVE_INTERVAL;
-    originalEnemyMoveIntervalMs = INITIAL_ENEMY_MOVE_INTERVAL;
+    enemiesDefeatedCount = 0; // Reseta a contagem de inimigos derrotados
+    enemyMoveInterval = currentEnemyMoveInterval; // Define a velocidade inicial dos inimigos para esta partida
+    originalEnemyMoveIntervalMs = currentEnemyMoveInterval; // Salva a velocidade base da dificuldade
 
     // Reseta os timers de power-ups para um estado que indica que não estão ativos
     auto now_for_init = high_resolution_clock::now(); 

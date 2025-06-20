@@ -7,8 +7,6 @@
 #include <algorithm>
 #include <chrono>
 
-std::chrono::milliseconds enemyMoveInterval(INITIAL_ENEMY_MOVE_INTERVAL);
-const std::chrono::milliseconds INITIAL_ENEMY_MOVE_INTERVAL(500);
 const std::chrono::milliseconds MIN_ENEMY_MOVE_INTERVAL(80);
 const int SPEED_DECREASE_PER_TIER_MS = 35;
 
@@ -24,6 +22,11 @@ std::chrono::high_resolution_clock::time_point explosionStartTime;
 extern bool gameOver;
 extern bool playerWon;
 extern int vidas;
+
+// Difficulty-based variables from main.cpp
+extern std::chrono::milliseconds enemyMoveInterval;
+extern std::chrono::milliseconds currentEnemyMoveInterval; // The base for the current difficulty
+extern int currentItemDropChance;
 // ItemType itemDropType = ItemType::EXTRA_LIFE; // Definition moved to main.cpp
 
 // Power-up state variables (defined in main.cpp, declared extern here)
@@ -54,12 +57,12 @@ void updatePlayerBullets() {
 
 void adjustEnemySpeed() {
     int speedTier = enemiesDefeatedCount / 2;
-    std::chrono::milliseconds newInterval = INITIAL_ENEMY_MOVE_INTERVAL - std::chrono::milliseconds(speedTier * SPEED_DECREASE_PER_TIER_MS);
+    std::chrono::milliseconds newInterval = currentEnemyMoveInterval - std::chrono::milliseconds(speedTier * SPEED_DECREASE_PER_TIER_MS);
     enemyMoveInterval = std::max(newInterval, MIN_ENEMY_MOVE_INTERVAL);
 }
 
 void tryDropItem(int enemyX, int enemyY) {
-    if (!itemDropActive && (rand() % 100) < ITEM_DROP_CHANCE) { // Only drop if no other item is active
+    if (!itemDropActive && (rand() % 100) < currentItemDropChance) { // Use difficulty-based chance
         itemDropActive = true;
         itemDropX = enemyX;
         itemDropY = enemyY;

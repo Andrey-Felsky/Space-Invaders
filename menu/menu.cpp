@@ -6,6 +6,10 @@
 #include <string>
 #include "../ranking/score.h"
 #include "../utils/cleanScreen/cleanScreen.h"
+#include "../utils/constants.h" // Para a enum Difficulty
+
+// Variável global de dificuldade definida em main.cpp
+extern Difficulty currentDifficulty;
 
 // Função auxiliar para definir a cor do console
 void setMenuColor(int color)
@@ -59,10 +63,89 @@ void exibirInstrucoes()
     _getch(); // Espera por qualquer tecla
 }
 
+void selectDifficulty()
+{
+    const std::vector<std::string> options = {"Facil", "Normal", "Dificil"};
+    int selected_option = static_cast<int>(currentDifficulty);
+    char key;
+
+    while (true)
+    {
+        cleanScreen();
+        setMenuColor(7);
+        std::cout << "\n\n   === SELECIONE A DIFICULDADE ===\n\n";
+
+        for (int i = 0; i < options.size(); ++i)
+        {
+            // Print selection cursor
+            if (i == selected_option)
+            {
+                setMenuColor(14); // Yellow
+                std::cout << "                > ";
+            }
+            else
+            {
+                setMenuColor(7); // White
+                std::cout << "                  ";
+            }
+
+            // Print option text with color for current difficulty
+            if (i == static_cast<int>(currentDifficulty))
+            {
+                setMenuColor(10); // Green
+            }
+            else
+            {
+                setMenuColor(7); // White
+            }
+            std::cout << options[i];
+
+            // Print selection cursor
+            if (i == selected_option)
+            {
+                setMenuColor(14); // Yellow
+                std::cout << " <\n";
+            }
+            else
+            {
+                std::cout << "  \n";
+            }
+        }
+
+        setMenuColor(7);
+        std::cout << "\n\n   Use as setas para navegar e ENTER para confirmar.";
+        std::cout << "\n   Pressione ESC para voltar ao menu.";
+        resetColor();
+
+        key = _getch();
+        if (key == 0 || key == -32)
+        { // Arrow keys
+            key = _getch();
+            if (key == 72)
+            { // Up
+                selected_option = (selected_option == 0) ? options.size() - 1 : selected_option - 1;
+            }
+            else if (key == 80)
+            { // Down
+                selected_option = (selected_option == options.size() - 1) ? 0 : selected_option + 1;
+            }
+        }
+        else if (key == 13)
+        { // Enter
+            currentDifficulty = static_cast<Difficulty>(selected_option);
+            // Loop again to show the new selection in green
+        }
+        else if (key == 27)
+        { // ESC
+            return; // Return to main menu
+        }
+    }
+}
+
 void menu()
 {
     hideCursor();
-    std::vector<std::string> options = {"Jogar", "Instrucoes", "Ranking", "Sair"};
+    std::vector<std::string> options = {"Jogar", "Dificuldade", "Instrucoes", "Ranking", "Sair"};
     int selected_option = 0;
     char key;
 
@@ -94,17 +177,20 @@ void menu()
         { // Enter
             switch (selected_option)
             {
-            case 0:     // Jogar
+            case 0: // Jogar
                 return; // Retorna para main para iniciar o jogo
-            case 1:     // Instrucoes
+            case 1: // Dificuldade
+                selectDifficulty();
+                break;
+            case 2: // Instrucoes
                 exibirInstrucoes();
                 break;
-            case 2: // Ranking
+            case 3: // Ranking
                 showRanking();
                 std::cout << "\n\nPressione qualquer tecla para voltar ao menu...";
                 _getch(); // Espera por qualquer tecla
                 break;
-            case 3: // Sair
+            case 4: // Sair
                 cleanScreen();
                 std::cout << "Obrigado por jogar!\n";
                 exit(0);

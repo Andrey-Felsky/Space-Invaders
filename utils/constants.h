@@ -16,7 +16,6 @@ const int ENEMY_ARRAY_MAX_SIZE = 25;
 
 const std::chrono::milliseconds EXPLOSION_DURATION(100);
 
-const int ITEM_DROP_CHANCE = 20;
 const std::chrono::milliseconds ITEM_MOVE_INTERVAL(100);
 
 // Enum for item types
@@ -46,5 +45,16 @@ const std::chrono::seconds EXTRA_SHOT_DURATION(6);
 const int EXTRA_SHOT_MAX_BULLETS = 3; // Max bullets on screen with this power-up
 const std::chrono::seconds MULTI_SHOT_DURATION(5);
 const std::chrono::seconds ENEMY_FREEZE_DURATION(2);
+
+// Difficulty settings
+enum class Difficulty {
+    FACIL,
+    NORMAL,
+    DIFICIL
+};
+
+// Base values that will be modified by difficulty
+const std::chrono::milliseconds BASE_ENEMY_MOVE_INTERVAL(500);
+const int BASE_ITEM_DROP_CHANCE = 25; // % chance
 
 #endif
