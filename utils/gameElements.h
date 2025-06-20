@@ -2,11 +2,12 @@
 #include <string>
 #include <windows.h>
 
-struct GameElements {
-    char spaceship = 'A';  
-    char wall = char(219);   
-    char path = ' '; 
-    char enemy = 'W'; 
+struct GameElements
+{
+    char spaceship = 'A';
+    char wall = char(219);
+    char path = ' ';
+    char enemy = 'W';
     char shoot = '|';
 
     int spaceshipColor = 10;
@@ -16,7 +17,8 @@ struct GameElements {
     int shootColor = 14;
 };
 
-struct PlayerRegistrationAndScore {
+struct PlayerRegistrationAndScore
+{
     std::string nome;
     int score;
     std::string data;

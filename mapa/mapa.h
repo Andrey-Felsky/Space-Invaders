@@ -11,7 +11,7 @@ extern char mapa[ALTURA_MAPA][LARGURA_MAPA];
 extern std::vector<std::pair<int, int>> playerBullets;
 extern bool inimigoVivo[ENEMY_ARRAY_MAX_SIZE];
 extern int inimigos[ENEMY_ARRAY_MAX_SIZE][2];
- 
+
 extern bool tiroInimigoAtivo;
 extern int tiroInimigoX, tiroInimigoY;
 
@@ -19,12 +19,14 @@ extern int naveX;
 
 // --- Declaração externa para ShipConfig e seu tipo ---
 // Estas definições DEVEM ser idênticas às de main.cpp
-enum class ShipType {
+enum class ShipType
+{
     TYPE_1_FAST_SINGLE,
     TYPE_2_BALANCED_EXTRA,
     TYPE_3_BALANCED_MULTI
 };
-struct ShipConfig {
+struct ShipConfig
+{
     ShipType type;
     std::string name;
     std::string description;

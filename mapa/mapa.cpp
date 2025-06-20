@@ -14,7 +14,7 @@ using namespace std::chrono;
 
 // Presumindo que ShipConfig e chosenShipConfig são declarados externamente
 // e acessíveis aqui, conforme configurado anteriormente (em mapa.h e main.cpp)
-extern ShipConfig chosenShipConfig; 
+extern ShipConfig chosenShipConfig;
 
 GameElements gameIcons;
 HANDLE hConsole = GetStdHandle(STD_OUTPUT_HANDLE);
@@ -43,13 +43,14 @@ void render(int score, float tempo, int currentVidas)
     SetConsoleTextAttribute(hConsole, 7);
     cout << scoreStr;
 
-    for (int i = 0; i < padding; ++i) {
+    for (int i = 0; i < padding; ++i)
+    {
         cout << " ";
     }
-    
+
     SetConsoleTextAttribute(hConsole, 7);
     cout << tempoStr;
-    
+
     cout << gameIcons.wall << "\n";
 
     cout << gameIcons.wall;
@@ -74,8 +75,9 @@ void render(int score, float tempo, int currentVidas)
     }
 
     // Draw player bullets
-    for (const auto& bullet : playerBullets) {
-        if (bullet.second >= 0 && bullet.second < ALTURA_MAPA && bullet.first >=0 && bullet.first < LARGURA_MAPA)
+    for (const auto &bullet : playerBullets)
+    {
+        if (bullet.second >= 0 && bullet.second < ALTURA_MAPA && bullet.first >= 0 && bullet.first < LARGURA_MAPA)
             mapa[bullet.second][bullet.first] = chosenShipConfig.bulletChar; // Usa o caractere de tiro da nave escolhida
     }
 
@@ -83,55 +85,84 @@ void render(int score, float tempo, int currentVidas)
         mapa[tiroInimigoY][tiroInimigoX] = '|';
 
     // --- Renderiza a skin da nave escolhida ---
-    if (!chosenShipConfig.skin.empty()) { // Verifica se a skin não está vazia
+    if (!chosenShipConfig.skin.empty())
+    { // Verifica se a skin não está vazia
         int skinLength = chosenShipConfig.skin.length();
-        int startX = naveX - skinLength / 2; 
+        int startX = naveX - skinLength / 2;
 
-        for (int i = 0; i < skinLength; ++i) {
+        for (int i = 0; i < skinLength; ++i)
+        {
             int currentX = startX + i;
-            if (currentX >= 0 && currentX < LARGURA_MAPA) {
+            if (currentX >= 0 && currentX < LARGURA_MAPA)
+            {
                 mapa[ALTURA_MAPA - 1][currentX] = chosenShipConfig.skin[i];
             }
         }
     } // --- Fim da renderização da skin da nave ---
 
-    if (explosionActiveEnemy) {
-        if (now - explosionStartTime < EXPLOSION_DURATION) {
+    if (explosionActiveEnemy)
+    {
+        if (now - explosionStartTime < EXPLOSION_DURATION)
+        {
             mapa[explosionEnemyY][explosionEnemyX] = 'X';
-        } else {
+        }
+        else
+        {
             explosionActiveEnemy = false;
         }
     }
 
-    if (explosionActivePlayer) {
-        if (now - explosionStartTime < EXPLOSION_DURATION) {
+    if (explosionActivePlayer)
+    {
+        if (now - explosionStartTime < EXPLOSION_DURATION)
+        {
             mapa[explosionPlayerY][explosionPlayerX] = '@';
-        } else {
+        }
+        else
+        {
             explosionActivePlayer = false;
         }
     }
 
-    if (itemDropActive && itemDropY < ALTURA_MAPA && itemDropX < LARGURA_MAPA) {
+    if (itemDropActive && itemDropY < ALTURA_MAPA && itemDropX < LARGURA_MAPA)
+    {
         char itemChar = '?';
         // Colors can be associated with item types for better visual feedback
-        switch (itemDropType) {
-            case ItemType::EXTRA_LIFE: itemChar = 'L'; break; // Life
-            case ItemType::SPEED_BOOST: itemChar = 'S'; break; // Speed
-            case ItemType::EXTRA_SHOT: itemChar = 'E'; break; // Extra shot
-            case ItemType::MULTI_SHOT: itemChar = 'M'; break; // Multi shot
-            case ItemType::BONUS_POINTS: itemChar = '$'; break; // Points
-            case ItemType::ENEMY_FREEZE: itemChar = 'F'; break; // Freeze
-            default: itemChar = '+'; break;
+        switch (itemDropType)
+        {
+        case ItemType::EXTRA_LIFE:
+            itemChar = 'L';
+            break; // Life
+        case ItemType::SPEED_BOOST:
+            itemChar = 'S';
+            break; // Speed
+        case ItemType::EXTRA_SHOT:
+            itemChar = 'E';
+            break; // Extra shot
+        case ItemType::MULTI_SHOT:
+            itemChar = 'M';
+            break; // Multi shot
+        case ItemType::BONUS_POINTS:
+            itemChar = '$';
+            break; // Points
+        case ItemType::ENEMY_FREEZE:
+            itemChar = 'F';
+            break; // Freeze
+        default:
+            itemChar = '+';
+            break;
         }
-        if (itemDropX >= 0 && itemDropX < LARGURA_MAPA && itemDropY >=0 && itemDropY < ALTURA_MAPA)
+        if (itemDropX >= 0 && itemDropX < LARGURA_MAPA && itemDropY >= 0 && itemDropY < ALTURA_MAPA)
             mapa[itemDropY][itemDropX] = itemChar;
     }
 
     // Clear explosion if duration passed (moved here for clarity, can be in logic)
-    if (explosionActiveEnemy && now - explosionStartTime >= EXPLOSION_DURATION) {
+    if (explosionActiveEnemy && now - explosionStartTime >= EXPLOSION_DURATION)
+    {
         explosionActiveEnemy = false;
     }
-    if (explosionActivePlayer && now - explosionStartTime >= EXPLOSION_DURATION) {
+    if (explosionActivePlayer && now - explosionStartTime >= EXPLOSION_DURATION)
+    {
         explosionActivePlayer = false;
     }
 
@@ -141,37 +172,58 @@ void render(int score, float tempo, int currentVidas)
         for (int x = 0; x < LARGURA_MAPA; x++)
         {
             char c = mapa[y][x];
-            
+
             // A verificação da nave do jogador deve vir primeiro, pois se baseia na posição, não apenas no caractere.
             bool isPlayerShipChar = false;
-            if (y == ALTURA_MAPA - 1 && !chosenShipConfig.skin.empty()) {
+            if (y == ALTURA_MAPA - 1 && !chosenShipConfig.skin.empty())
+            {
                 int skinLength = chosenShipConfig.skin.length();
                 int startX = naveX - skinLength / 2;
-                if (x >= startX && x < startX + skinLength) {
+                if (x >= startX && x < startX + skinLength)
+                {
                     isPlayerShipChar = true;
                 }
             }
-            
+
             // Lógica de coloração unificada para evitar que uma cor sobrescreva a outra.
-            if (isPlayerShipChar) {
+            if (isPlayerShipChar)
+            {
                 SetConsoleTextAttribute(hConsole, gameIcons.spaceshipColor);
-            } else if (c == gameIcons.enemy) {
+            }
+            else if (c == gameIcons.enemy)
+            {
                 SetConsoleTextAttribute(hConsole, gameIcons.enemyColor); // Agora esta cor será aplicada corretamente.
-            } else if (c == chosenShipConfig.bulletChar) {
+            }
+            else if (c == chosenShipConfig.bulletChar)
+            {
                 SetConsoleTextAttribute(hConsole, chosenShipConfig.bulletColor);
-            } else if (c == '|') {
+            }
+            else if (c == '|')
+            {
                 SetConsoleTextAttribute(hConsole, 12); // Tiro do inimigo (Vermelho)
-            } else if (c == 'X' || c == '@') {
-                SetConsoleTextAttribute(hConsole, 6);  // Explosão (Amarelo escuro/Laranja)
-            } else if (c == 'L') {
+            }
+            else if (c == 'X' || c == '@')
+            {
+                SetConsoleTextAttribute(hConsole, 6); // Explosão (Amarelo escuro/Laranja)
+            }
+            else if (c == 'L')
+            {
                 SetConsoleTextAttribute(hConsole, 10); // Vida (Verde)
-            } else if (c == 'S') {
+            }
+            else if (c == 'S')
+            {
                 SetConsoleTextAttribute(hConsole, 14); // Velocidade (Amarelo)
-            } else if (c == '$') {
+            }
+            else if (c == '$')
+            {
                 SetConsoleTextAttribute(hConsole, 12); // Pontos (Vermelho claro)
-            } else if (c == 'F') {
-                SetConsoleTextAttribute(hConsole, 3);  // Freeze (Ciano)
-            } else if (c == 'E' || c == 'M' || c == '+' || c == '?') {
+            }
+            else if (c == 'F')
+            {
+                SetConsoleTextAttribute(hConsole, 3); // Freeze (Ciano)
+            }
+            else if (c == 'E' || c == 'M' || c == '+' || c == '?')
+            {
                 SetConsoleTextAttribute(hConsole, 11); // Outros itens (Ciano claro)
             }
             else
@@ -211,22 +263,24 @@ void render(int score, float tempo, int currentVidas)
 
     // Verifica e imprime cada power-up ativo
     long speed_seconds = duration_cast<seconds>(speedBoostEndTime - now).count();
-    if (speed_seconds > 0) {
+    if (speed_seconds > 0)
+    {
         ss.str(""); // Limpa o stringstream
         ss << "[Velocidade:" << speed_seconds << "s] ";
         string item_str = ss.str();
-        
+
         SetConsoleTextAttribute(hConsole, 14); // Amarelo
         cout << item_str;
         SetConsoleTextAttribute(hConsole, originalColors); // Restaura cor
-        
+
         line_length += item_str.length();
         hasActiveItem = true;
     }
 
     bool extraShotPowerUpActive = (maxPlayerBulletsAllowed > chosenShipConfig.initialMaxBullets) &&
                                   duration_cast<seconds>(extraShotEndTime - now).count() > 0;
-    if (extraShotPowerUpActive) {
+    if (extraShotPowerUpActive)
+    {
         ss.str("");
         ss << "[Tiro Extra:" << duration_cast<seconds>(extraShotEndTime - now).count() << "s (" << maxPlayerBulletsAllowed << ")] ";
         string item_str = ss.str();
@@ -240,8 +294,9 @@ void render(int score, float tempo, int currentVidas)
     }
 
     bool multiShotPowerUpActive = multiShotActive && !chosenShipConfig.initialMultiShotActive &&
-                                 duration_cast<seconds>(multiShotEndTime - now).count() > 0;
-    if (multiShotPowerUpActive) {
+                                  duration_cast<seconds>(multiShotEndTime - now).count() > 0;
+    if (multiShotPowerUpActive)
+    {
         ss.str("");
         ss << "[Tiro Multi:" << duration_cast<seconds>(multiShotEndTime - now).count() << "s] ";
         string item_str = ss.str();
@@ -255,12 +310,13 @@ void render(int score, float tempo, int currentVidas)
     }
 
     long freeze_seconds = duration_cast<seconds>(enemyFreezeEndTime - now).count();
-    if (freeze_seconds > 0) {
+    if (freeze_seconds > 0)
+    {
         ss.str("");
         ss << "[Congelado:" << freeze_seconds << "s] ";
         string item_str = ss.str();
 
-        SetConsoleTextAttribute(hConsole, 9);  // Azul Claro
+        SetConsoleTextAttribute(hConsole, 9); // Azul Claro
         cout << item_str;
         SetConsoleTextAttribute(hConsole, originalColors);
 
@@ -268,7 +324,8 @@ void render(int score, float tempo, int currentVidas)
         hasActiveItem = true;
     }
 
-    if (!hasActiveItem) {
+    if (!hasActiveItem)
+    {
         string none_str = "Nenhum";
         cout << none_str;
         line_length += none_str.length();
@@ -276,7 +333,8 @@ void render(int score, float tempo, int currentVidas)
 
     // Calcula e imprime o preenchimento para alinhar a borda direita
     padding = LARGURA_MAPA - line_length;
-    if (padding > 0) {
+    if (padding > 0)
+    {
         cout << string(padding, ' ');
     }
     cout << gameIcons.wall << "\n";
@@ -295,14 +353,16 @@ void render(int score, float tempo, int currentVidas)
     line_length += currentVidas * life_symbol.length();
 
     SetConsoleTextAttribute(hConsole, 12); // Vermelho claro para vidas
-    for (int i = 0; i < currentVidas; ++i) {
+    for (int i = 0; i < currentVidas; ++i)
+    {
         cout << life_symbol;
     }
     SetConsoleTextAttribute(hConsole, originalColors); // Restaura cor
 
     // Calcula e imprime o preenchimento para a linha de vidas
     padding = LARGURA_MAPA - line_length;
-    if (padding > 0) {
+    if (padding > 0)
+    {
         cout << string(padding, ' ');
     }
     cout << gameIcons.wall << "\n";
