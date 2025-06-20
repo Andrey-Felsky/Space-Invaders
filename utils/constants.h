@@ -22,6 +22,12 @@ const int BARRIER_HEIGHT = 1; // Altura de cada segmento de barreira (1 caracter
 
 const std::chrono::milliseconds EXPLOSION_DURATION(100);
 
+// Boss constants
+const int BOSS_INITIAL_HEALTH = 20;
+const int BOSS_WIDTH = 7; // Largura do chefe em caracteres
+const int BOSS_HEIGHT = 3; // Altura do chefe em caracteres
+const std::chrono::milliseconds BOSS_SHOT_INTERVAL(1200); // Intervalo de tiro do chefe
+
 const std::chrono::milliseconds ITEM_MOVE_INTERVAL(100);
 
 // Enum for item types

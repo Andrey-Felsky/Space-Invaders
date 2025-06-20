@@ -6,6 +6,7 @@
 #include <utility> // Required for std::pair
 #include "../utils/constants.h"
 #include "../player/player.h"
+#include "../enemy/enemy.h"
 
 // --- Barrier Definitions ---
 struct Barrier {
@@ -29,6 +30,7 @@ extern int itemDropX, itemDropY;
 extern ItemType itemDropType; // Now using the enum from constants.h
 extern int currentItemDropChance;
 extern GameMode currentGameMode;
+extern bool bossFightActive;
 
 extern std::chrono::milliseconds enemyMoveInterval;
 extern int enemiesDefeatedCount;

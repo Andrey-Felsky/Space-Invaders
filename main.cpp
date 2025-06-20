@@ -70,6 +70,10 @@ int enemiesDefeatedCount = 0;
 // This will be used to revert enemy speed after a speed boost or freeze
 std::chrono::milliseconds originalEnemyMoveIntervalMs; // Será definido com base na dificuldade
  
+// Boss state
+Boss boss;
+bool bossFightActive = false;
+
 std::chrono::high_resolution_clock::time_point lastPlayerMoveTime; // Para controlar o cooldown de movimento do jogador
 const int FPS = 30;
 const std::chrono::milliseconds frameDuration(1000 / FPS);
@@ -101,13 +105,17 @@ void autoPlayInput() {
 
     // Prioridade 2: Coletar itens
     if (itemDropActive) {
+        // Move em direção ao item se não estiver alinhado
         if (itemDropX > players[0].x && players[0].x < LARGURA_MAPA - 1) {
             players[0].x++;
+            lastPlayerMoveTime = now;
+            return; // Ação do frame: mover para o item.
         } else if (itemDropX < players[0].x && players[0].x > 0) {
             players[0].x--;
+            lastPlayerMoveTime = now;
+            return; // Ação do frame: mover para o item.
         }
-        lastPlayerMoveTime = now;
-        // A IA também atirará enquanto coleta itens
+        // Se já estiver alinhado com o item, a IA pode prosseguir para a lógica de ataque.
     }
 
     // Prioridade 3: Atacar inimigos
@@ -366,6 +374,7 @@ void initBarriers() {
 void game(){
     gameOver = false;
     playerWon = false; // Reseta a flag de vitoria
+    bossFightActive = false; // Reseta o chefe
     
     // Initialize players
     players[0].init(1, LARGURA_MAPA / 4);
@@ -467,6 +476,10 @@ void game(){
 
             updatePlayerBullets();
             updateTiroInimigo();
+            if (bossFightActive) {
+                updateBoss();
+                updateBossBullets();
+            }
             updateExplosions(); // Atualiza o estado das explosões
             checkCollisions();
             checkEndOfGame();
@@ -476,7 +489,7 @@ void game(){
             render(players, tempoDecorrido);
             lastFrameTime = now;
         }
-
+        
         if (now - lastEnemyMoveTime >= enemyMoveInterval) {
             // moveEnemies will check for freeze internally
             moveEnemies(); 

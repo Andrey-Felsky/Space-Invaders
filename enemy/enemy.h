@@ -1,6 +1,7 @@
 #ifndef ENEMY_H
 #define ENEMY_H
 #include <chrono>
+#include <vector>
 
 #include "../utils/constants.h"
 
@@ -13,4 +14,21 @@ extern std::chrono::high_resolution_clock::time_point enemyFreezeEndTime; // For
 void initEnemy();
 void moveEnemies();
 
-#endif
+// --- Boss Definitions ---
+struct Boss {
+    int x, y;
+    int health;
+    bool active;
+    int direction;
+    std::vector<std::pair<int, int>> bullets;
+    std::chrono::high_resolution_clock::time_point lastShotTime;
+};
+
+extern Boss boss;
+extern bool bossFightActive;
+
+void initBoss();
+void updateBoss();
+void updateBossBullets();
+
+#endif // ENEMY_H

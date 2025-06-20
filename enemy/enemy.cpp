@@ -1,49 +1,106 @@
 #include "enemy.h"
-#include <windows.h>
-#include "../utils/constants.h"
-#include <chrono> // Required for time checks
-
-// External declaration for the freeze timer
-extern std::chrono::high_resolution_clock::time_point enemyFreezeEndTime;
-
+#include <chrono>
+#include <cstdlib> // For rand()
 int dirInimigo = 1;
 
-void initEnemy() {
-    int contador = 0;
+// --- Boss Global Variables ---
+// A definição real está em main.cpp, aqui são apenas usadas pelas funções
+extern Boss boss;
+extern bool bossFightActive;
 
-    for (int linha = 0; linha < NUM_ENEMY_ROWS_INIT; linha++) {
-        for (int coluna = 0; coluna < NUM_ENEMY_COLS_INIT; coluna++) {
-            inimigos[contador][0] = 2 + coluna * ENEMY_INIT_SPACING_X;
-            inimigos[contador][1] = 2 + linha * ENEMY_INIT_SPACING_Y;
-            inimigoVivo[contador] = true;
-            contador++;
+void initEnemy()
+{
+    int startX = (LARGURA_MAPA - (NUM_ENEMY_COLS_INIT * ENEMY_INIT_SPACING_X)) / 2;
+    int startY = 2;
+
+    for (int i = 0; i < TOTAL_INITIAL_ENEMIES; i++)
+    {
+        int row = i / NUM_ENEMY_COLS_INIT;
+        int col = i % NUM_ENEMY_COLS_INIT;
+        inimigos[i][0] = startX + col * ENEMY_INIT_SPACING_X;
+        inimigos[i][1] = startY + row * ENEMY_INIT_SPACING_Y;
+        inimigoVivo[i] = true;
+    }
+    dirInimigo = 1;
+}
+
+void moveEnemies()
+{
+    auto now = std::chrono::high_resolution_clock::now();
+    if (now < enemyFreezeEndTime)
+    {
+        return; // Inimigos estão congelados
+    }
+
+    bool moveDown = false;
+    for (int i = 0; i < TOTAL_INITIAL_ENEMIES; i++)
+    {
+        if (inimigoVivo[i])
+        {
+            if ((inimigos[i][0] >= LARGURA_MAPA - 1 && dirInimigo == 1) || (inimigos[i][0] <= 0 && dirInimigo == -1))
+            {
+                moveDown = true;
+                break;
+            }
+        }
+    }
+
+    if (moveDown)
+    {
+        for (int i = 0; i < TOTAL_INITIAL_ENEMIES; i++)
+        {
+            inimigos[i][1]++;
+        }
+        dirInimigo *= -1;
+    }
+    else
+    {
+        for (int i = 0; i < TOTAL_INITIAL_ENEMIES; i++)
+        {
+            inimigos[i][0] += dirInimigo;
         }
     }
 }
 
-void moveEnemies() {
-    // Check if enemies are frozen
-    if (std::chrono::high_resolution_clock::now() < enemyFreezeEndTime) {
-        return; // Skip movement if frozen
+// --- Boss Functions Implementation ---
+
+void initBoss() {
+    boss.active = true;
+    boss.health = BOSS_INITIAL_HEALTH;
+    boss.x = (LARGURA_MAPA - BOSS_WIDTH) / 2;
+    boss.y = 1; // Posição Y no topo da tela
+    boss.direction = 1;
+    boss.bullets.clear();
+    boss.lastShotTime = std::chrono::high_resolution_clock::now();
+}
+
+void updateBoss() {
+    if (!boss.active || boss.health <= 0) return;
+
+    // --- Movimento do Chefe ---
+    boss.x += boss.direction;
+    if (boss.x <= 0 || boss.x + BOSS_WIDTH >= LARGURA_MAPA) {
+        boss.direction *= -1; // Inverte a direção ao atingir a borda
     }
 
-    bool hitEdge = false;
-    for (int i = 0; i < TOTAL_INITIAL_ENEMIES; i++) {
-        if (inimigoVivo[i]) {
-            inimigos[i][0] += dirInimigo;
-
-            if (inimigos[i][0] >= LARGURA_MAPA - 1 || inimigos[i][0] <= 0) {
-                hitEdge = true;
-            }
-        }
+    // --- Ataque do Chefe ---
+    auto now = std::chrono::high_resolution_clock::now();
+    if (now - boss.lastShotTime > BOSS_SHOT_INTERVAL) {
+        // Atira uma bala do centro do chefe
+        int bulletX = boss.x + BOSS_WIDTH / 2;
+        int bulletY = boss.y + BOSS_HEIGHT;
+        boss.bullets.push_back({bulletX, bulletY});
+        boss.lastShotTime = now;
     }
+}
 
-    if (hitEdge) {
-        dirInimigo *= -1;
-        for (int i = 0; i < TOTAL_INITIAL_ENEMIES; i++) {
-            if (inimigoVivo[i]) {
-                inimigos[i][1]++;
-            }
+void updateBossBullets() {
+    for (auto it = boss.bullets.begin(); it != boss.bullets.end(); ) {
+        it->second++; // Move a bala para baixo
+        if (it->second >= ALTURA_MAPA) {
+            it = boss.bullets.erase(it); // Remove se sair da tela
+        } else {
+            ++it;
         }
     }
 }

@@ -46,6 +46,24 @@ void render(const Player players[2], float tempo)
     }
     cout << gameIcons.wall << "\n";
 
+    // --- Linha da Barra de Vida do Chefe ---
+    if (bossFightActive) {
+        cout << gameIcons.wall;
+        string healthText = "CHEFE: ";
+        int barWidth = LARGURA_MAPA - healthText.length() - 2; // -2 for padding
+        int healthBlocks = (int)(((float)boss.health / BOSS_INITIAL_HEALTH) * barWidth);
+        if (healthBlocks < 0) healthBlocks = 0;
+
+        setConsoleColor(12); // Vermelho para o texto
+        cout << healthText;
+        setConsoleColor(4); // Vermelho escuro para a barra de vida
+        cout << string(healthBlocks, (char)219);
+        cout << string(barWidth - healthBlocks, ' ');
+        cout << "  "; // Padding
+        resetConsoleColor();
+        cout << gameIcons.wall << "\n";
+    }
+
     cout << gameIcons.wall;
     for (int x = 0; x < LARGURA_MAPA; x++)
         cout << gameIcons.wall;
@@ -83,6 +101,22 @@ void render(const Player players[2], float tempo)
         }
     }
 
+    // Render Boss
+    if (bossFightActive && boss.health > 0) {
+        const char* boss_skin_l1 = " /_o_\\ ";
+        const char* boss_skin_l2 = "|(> <)|";
+        const char* boss_skin_l3 = " \\-^-/ ";
+
+        for (int c = 0; c < BOSS_WIDTH; ++c) {
+            if (boss.y >= 0 && boss.y < ALTURA_MAPA && boss.x + c >= 0 && boss.x + c < LARGURA_MAPA)
+                mapa[boss.y][boss.x + c] = boss_skin_l1[c];
+            if (boss.y + 1 >= 0 && boss.y + 1 < ALTURA_MAPA && boss.x + c >= 0 && boss.x + c < LARGURA_MAPA)
+                mapa[boss.y + 1][boss.x + c] = boss_skin_l2[c];
+            if (boss.y + 2 >= 0 && boss.y + 2 < ALTURA_MAPA && boss.x + c >= 0 && boss.x + c < LARGURA_MAPA)
+                mapa[boss.y + 2][boss.x + c] = boss_skin_l3[c];
+        }
+    }
+
     // Draw bullets for both players
     for (int i = 0; i < 2; ++i) {
         for (const auto &bullet : players[i].bullets) {
@@ -93,6 +127,14 @@ void render(const Player players[2], float tempo)
 
     if (tiroInimigoAtivo && tiroInimigoY >= 0 && tiroInimigoY < ALTURA_MAPA)
         mapa[tiroInimigoY][tiroInimigoX] = '|';
+
+    // Draw boss bullets
+    if (bossFightActive) {
+        for (const auto &bullet : boss.bullets) {
+            if (bullet.second >= 0 && bullet.second < ALTURA_MAPA && bullet.first >= 0 && bullet.first < LARGURA_MAPA)
+                mapa[bullet.second][bullet.first] = 'V'; // Caractere do tiro do chefe
+        }
+    }
 
     // Render player ships
     int numPlayersToRender = (currentGameMode == GameMode::SINGLE_PLAYER) ? 1 : 2;
@@ -175,8 +217,19 @@ void render(const Player players[2], float tempo)
             }
 
 
+            // Checa se o caractere faz parte do chefe
+            bool isBossChar = false;
+            if (bossFightActive && boss.health > 0) {
+                if (y >= boss.y && y < boss.y + BOSS_HEIGHT && x >= boss.x && x < boss.x + BOSS_WIDTH) {
+                    isBossChar = true;
+                }
+            }
+
+            if (isBossChar) {
+                setConsoleColor(12); // Vermelho para o chefe
+            }
             // Lógica de coloração unificada para evitar que uma cor sobrescreva a outra. (Prioridade: Nave > Inimigo > Tiro > Item)
-            if (player_index_at_char != -1) {
+            else if (player_index_at_char != -1) {
                 setConsoleColor(players[player_index_at_char].shipConfig.bulletColor); // Cor da nave
             } else if (c == gameIcons.enemy) {
                 setConsoleColor(gameIcons.enemyColor); // Agora esta cor será aplicada corretamente.
@@ -186,6 +239,10 @@ void render(const Player players[2], float tempo)
                 setConsoleColor(players[1].shipConfig.bulletColor);
             }
             else if (c == '|')
+            {
+                setConsoleColor(12); // Tiro do inimigo (Vermelho)
+            }
+            else if (c == 'V') // Tiro do chefe
             {
                 setConsoleColor(12); // Tiro do inimigo (Vermelho)
             }

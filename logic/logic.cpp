@@ -95,8 +95,15 @@ void checkEndOfGame() {
         }
     }
 
-    // Condição de vitória: Todos os inimigos foram derrotados
-    if (allEnemiesDefeated) {
+    // Se todos os inimigos foram derrotados, inicia a luta contra o chefe se ainda não estiver ativa
+    if (allEnemiesDefeated && !bossFightActive) {
+        initBoss(); // Prepara o chefe para a batalha
+        bossFightActive = true;
+        return; // Retorna para o loop do jogo para começar a luta contra o chefe
+    }
+
+    // Condição de vitória final: O chefe foi derrotado
+    if (bossFightActive && boss.health <= 0) {
         gameOver = true;
         playerWon = true;
     }
@@ -167,6 +174,30 @@ void checkCollisions() {
         }
     }
 
+    // --- Colisões de Tiros do Jogador vs. Chefe ---
+    if (bossFightActive && boss.health > 0) {
+        for (int p_idx = 0; p_idx < 2; ++p_idx) {
+            for (auto itBullet = players[p_idx].bullets.begin(); itBullet != players[p_idx].bullets.end(); ) {
+                int bulletX = itBullet->first;
+                int bulletY = itBullet->second;
+
+                // Checa se a bala está dentro da área do chefe
+                if (bulletX >= boss.x && bulletX < boss.x + BOSS_WIDTH &&
+                    bulletY >= boss.y && bulletY < boss.y + BOSS_HEIGHT) {
+                    
+                    boss.health--; // Reduz a vida do chefe
+                    itBullet = players[p_idx].bullets.erase(itBullet); // Remove a bala
+                    Beep(300, 50); // Som de dano no chefe
+
+                    // Opcional: Adicionar uma pequena explosão no local do impacto
+
+                } else {
+                    ++itBullet;
+                }
+            }
+        }
+    }
+
     // --- Colisões de Tiros do Inimigo ---
     if (tiroInimigoAtivo) {
         bool enemyBulletHitSomething = false;
@@ -210,6 +241,47 @@ void checkCollisions() {
 
         if (enemyBulletHitSomething) {
             tiroInimigoAtivo = false;
+        }
+    }
+
+    // --- Colisões de Tiros do Chefe ---
+    for (auto itBullet = boss.bullets.begin(); itBullet != boss.bullets.end(); ) {
+        bool bulletHitSomething = false;
+        int bulletX = itBullet->first;
+        int bulletY = itBullet->second;
+
+        // 1. Checar colisão com Barreiras
+        for (int i = 0; i < NUM_BARRIERS; ++i) {
+            if (bulletX >= barriers[i].x && bulletX < barriers[i].x + BARRIER_WIDTH &&
+                bulletY >= barriers[i].y && bulletY < barriers[i].y + BARRIER_HEIGHT) {
+                if (barriers[i].shape[0][0] != ' ') {
+                    barriers[i].shape[0][0] = ' '; // Danifica a barreira (1x1)
+                    bulletHitSomething = true;
+                    break;
+                }
+            }
+        }
+
+        // 2. Checar colisão com Jogadores
+        if (!bulletHitSomething) {
+            for (int p_idx = 0; p_idx < 2; ++p_idx) {
+                if (players[p_idx].vidas > 0 && bulletY == ALTURA_MAPA - 1 && bulletX >= players[p_idx].x - 1 && bulletX <= players[p_idx].x + 1) {
+                    players[p_idx].vidas--;
+                    bulletHitSomething = true;
+                    players[p_idx].explosionActive = true;
+                    players[p_idx].explosionX = players[p_idx].x;
+                    players[p_idx].explosionY = ALTURA_MAPA - 1;
+                    players[p_idx].explosionStartTime = now;
+                    Beep(PLAYER_EXPLOSION_FREQ, PLAYER_EXPLOSION_DUR);
+                    break;
+                }
+            }
+        }
+
+        if (bulletHitSomething) {
+            itBullet = boss.bullets.erase(itBullet);
+        } else {
+            ++itBullet;
         }
     }
 
