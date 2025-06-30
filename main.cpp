@@ -26,11 +26,16 @@
 using namespace std;
 using namespace std::chrono;
 
+// compilação
+// g++ main.cpp mapa/mapa.cpp enemy/enemy.cpp logic/logic.cpp menu/menu.cpp ranking/score.cpp utils/cleanScreen/cleanScreen.cpp utils/console_utils.cpp ui/ui.cpp player/player.cpp -o output/main.exe
+
 // Definição global das naves disponíveis para ser acessível em toda a aplicação
 const std::vector<ShipConfig> AllShipOptions = {
     {ShipType::TYPE_1_FAST_SINGLE, "Nave Agil", "Um tiro por vez, se movimenta muito rapido.", std::chrono::milliseconds(50), 1, "-^-", 10, '\'', false},
     {ShipType::TYPE_2_BALANCED_EXTRA, "Nave Tática", "Um pouco mais lenta, mas com capacidade para Tiro Extra.", std::chrono::milliseconds(100), 2, "-O-", 11, '*', false},
     {ShipType::TYPE_3_BALANCED_MULTI, "Nave Destruidora", "Um pouco mais lenta, mas dispara um Tiro Multiplo.", std::chrono::milliseconds(100), 1, "-W-", 14, 'o', true}
+    // {ShipType::TYPE_4_DIAGONAL_REFLECT, "Nave Espectral", "Dispara tiros roxos na diagonal que ricocheteiam.", std::chrono::milliseconds(80), 2, "~*~", 13, '+', false},
+    // {ShipType::TYPE_5_LASER_BEAM, "Nave de Cerco", "Dispara um feixe vertical de 1x3.", std::chrono::milliseconds(120), 1, "|=|", 12, '|', false}
 };
 
 // As definições de ShipType e ShipConfig agora vêm de "mapa/mapa.h"
@@ -130,6 +135,42 @@ void autoPlayInput(Player& botPlayer) {
         // Se já estiver alinhado com o item, a IA pode prosseguir para a lógica de ataque.
     }
 
+    // Prioridade 3: Atacar o Chefe (se estiver ativo)
+    if (bossFightActive && boss.health > 0) {
+        // Calcula o centro do chefe para alinhar
+        int targetBossX = boss.x + BOSS_WIDTH / 2;
+
+        // Move para alinhar com o chefe
+        if (targetBossX > botPlayer.x && botPlayer.x < LARGURA_MAPA - 1) {
+            botPlayer.x++;
+            botPlayer.lastMoveTime = now;
+            return; // Ação do frame: mover para o chefe.
+        } else if (targetBossX < botPlayer.x && botPlayer.x > 0) {
+            botPlayer.x--;
+            botPlayer.lastMoveTime = now;
+            return; // Ação do frame: mover para o chefe.
+        } else { // Se já está alinhado (targetBossX == naveX)
+            // Atira!
+            if (botPlayer.shipConfig.type == ShipType::TYPE_5_LASER_BEAM) { // Laser 1x3 vertical
+                if (botPlayer.bullets.empty()) { // Apenas um laser por vez
+                    botPlayer.bullets.push_back({botPlayer.x, ALTURA_MAPA - 2, 0, -1});
+                }
+            } else if (botPlayer.bullets.size() < static_cast<size_t>(botPlayer.maxBulletsAllowed)) {
+                if (botPlayer.shipConfig.type == ShipType::TYPE_4_DIAGONAL_REFLECT) {
+                    botPlayer.bullets.push_back({botPlayer.x, ALTURA_MAPA - 2, -1, -1});
+                    botPlayer.bullets.push_back({botPlayer.x, ALTURA_MAPA - 2, 1, -1});
+                } else if (botPlayer.multiShotActive) {
+                    botPlayer.bullets.push_back({botPlayer.x, ALTURA_MAPA - 2, 0, -1});
+                    if (botPlayer.x > 0) botPlayer.bullets.push_back({botPlayer.x - 1, ALTURA_MAPA - 2, 0, -1});
+                    if (botPlayer.x < LARGURA_MAPA - 1) botPlayer.bullets.push_back({botPlayer.x + 1, ALTURA_MAPA - 2, 0, -1});
+                } else {
+                    botPlayer.bullets.push_back({botPlayer.x, ALTURA_MAPA - 2, 0, -1});
+                }
+            }
+            return; // Ação do frame: atirou no chefe.
+        }
+    }
+
     // Prioridade 3: Atacar inimigos
     // Encontra o inimigo vivo mais próximo na linha de frente (mais abaixo)
     int targetX = -1, targetY = -1;
@@ -151,16 +192,21 @@ void autoPlayInput(Player& botPlayer) {
             botPlayer.x--;
             botPlayer.lastMoveTime = now;
         } else { // Se já está alinhado (targetX == naveX)
-            // Atira! (copiado da lógica de input do jogador)
-            if (botPlayer.bullets.size() < static_cast<size_t>(botPlayer.maxBulletsAllowed)) { // Verifica o limite de balas
-                if (botPlayer.multiShotActive) {
-                    // Dispara 3 balas: centro, esquerda, direita (se possível)
-                    botPlayer.bullets.push_back({botPlayer.x, ALTURA_MAPA - 2});
-                    if (botPlayer.x > 0) botPlayer.bullets.push_back({botPlayer.x - 1, ALTURA_MAPA - 2});
-                    if (botPlayer.x < LARGURA_MAPA - 1) botPlayer.bullets.push_back({botPlayer.x + 1, ALTURA_MAPA - 2});
+            // Atira!
+            if (botPlayer.shipConfig.type == ShipType::TYPE_5_LASER_BEAM) { // Laser 1x3 vertical
+                if (botPlayer.bullets.empty()) { // Apenas um laser por vez
+                    botPlayer.bullets.push_back({botPlayer.x, ALTURA_MAPA - 2, 0, -1});
+                }
+            } else if (botPlayer.bullets.size() < static_cast<size_t>(botPlayer.maxBulletsAllowed)) {
+                if (botPlayer.shipConfig.type == ShipType::TYPE_4_DIAGONAL_REFLECT) {
+                    botPlayer.bullets.push_back({botPlayer.x, ALTURA_MAPA - 2, -1, -1});
+                    botPlayer.bullets.push_back({botPlayer.x, ALTURA_MAPA - 2, 1, -1});
+                } else if (botPlayer.multiShotActive) {
+                    botPlayer.bullets.push_back({botPlayer.x, ALTURA_MAPA - 2, 0, -1});
+                    if (botPlayer.x > 0) botPlayer.bullets.push_back({botPlayer.x - 1, ALTURA_MAPA - 2, 0, -1});
+                    if (botPlayer.x < LARGURA_MAPA - 1) botPlayer.bullets.push_back({botPlayer.x + 1, ALTURA_MAPA - 2, 0, -1});
                 } else {
-                    // Dispara uma única bala
-                    botPlayer.bullets.push_back({botPlayer.x, ALTURA_MAPA - 2});
+                    botPlayer.bullets.push_back({botPlayer.x, ALTURA_MAPA - 2, 0, -1});
                 }
             }
         }
@@ -186,15 +232,21 @@ void input(Player& p1, Player& p2) {
             }
         }
         else if (tecla == ' ' && p1.vidas > 0) {
-            if (p1.bullets.size() < static_cast<size_t>(p1.maxBulletsAllowed)) {
-                if (p1.multiShotActive) {
-                    // Dispara 3 balas: centro, esquerda, direita (se possível)
-                    p1.bullets.push_back({p1.x, ALTURA_MAPA - 2});
-                    if (p1.x > 0) p1.bullets.push_back({p1.x - 1, ALTURA_MAPA - 2});
-                    if (p1.x < LARGURA_MAPA - 1) p1.bullets.push_back({p1.x + 1, ALTURA_MAPA - 2});
+            if (p1.shipConfig.type == ShipType::TYPE_5_LASER_BEAM) { // Laser 1x3 vertical
+                if (p1.bullets.empty()) { // Apenas um laser por vez
+                    p1.bullets.push_back({p1.x, ALTURA_MAPA - 2, 0, -1});
+                    Beep(200, 150); // Laser sound
+                }
+            } else if (p1.bullets.size() < static_cast<size_t>(p1.maxBulletsAllowed)) {
+                if (p1.shipConfig.type == ShipType::TYPE_4_DIAGONAL_REFLECT) {
+                    p1.bullets.push_back({p1.x, ALTURA_MAPA - 2, -1, -1}); // Top-left
+                    p1.bullets.push_back({p1.x, ALTURA_MAPA - 2, 1, -1});  // Top-right
+                } else if (p1.multiShotActive) {
+                    p1.bullets.push_back({p1.x, ALTURA_MAPA - 2, 0, -1});
+                    if (p1.x > 0) p1.bullets.push_back({p1.x - 1, ALTURA_MAPA - 2, 0, -1});
+                    if (p1.x < LARGURA_MAPA - 1) p1.bullets.push_back({p1.x + 1, ALTURA_MAPA - 2, 0, -1});
                 } else {
-                    // Dispara uma única bala
-                    p1.bullets.push_back({p1.x, ALTURA_MAPA - 2});
+                    p1.bullets.push_back({p1.x, ALTURA_MAPA - 2, 0, -1});
                 }
             }
         }
@@ -218,15 +270,21 @@ void input(Player& p1, Player& p2) {
                     }
                 }
                 else if (tecla == 72 && p2.vidas > 0) { // Seta para Cima (Atirar)
-                    if (p2.bullets.size() < static_cast<size_t>(p2.maxBulletsAllowed)) {
-                        if (p2.multiShotActive) {
-                            // Dispara 3 balas: centro, esquerda, direita (se possível)
-                            p2.bullets.push_back({p2.x, ALTURA_MAPA - 2});
-                            if (p2.x > 0) p2.bullets.push_back({p2.x - 1, ALTURA_MAPA - 2});
-                            if (p2.x < LARGURA_MAPA - 1) p2.bullets.push_back({p2.x + 1, ALTURA_MAPA - 2});
+                    if (p2.shipConfig.type == ShipType::TYPE_5_LASER_BEAM) { // Laser 1x3 vertical
+                        if (p2.bullets.empty()) { // Apenas um laser por vez
+                            p2.bullets.push_back({p2.x, ALTURA_MAPA - 2, 0, -1});
+                            Beep(200, 150); // Laser sound
+                        }
+                    } else if (p2.bullets.size() < static_cast<size_t>(p2.maxBulletsAllowed)) {
+                        if (p2.shipConfig.type == ShipType::TYPE_4_DIAGONAL_REFLECT) {
+                            p2.bullets.push_back({p2.x, ALTURA_MAPA - 2, -1, -1});
+                            p2.bullets.push_back({p2.x, ALTURA_MAPA - 2, 1, -1});
+                        } else if (p2.multiShotActive) {
+                            p2.bullets.push_back({p2.x, ALTURA_MAPA - 2, 0, -1});
+                            if (p2.x > 0) p2.bullets.push_back({p2.x - 1, ALTURA_MAPA - 2, 0, -1});
+                            if (p2.x < LARGURA_MAPA - 1) p2.bullets.push_back({p2.x + 1, ALTURA_MAPA - 2, 0, -1});
                         } else {
-                            // Dispara uma única bala
-                            p2.bullets.push_back({p2.x, ALTURA_MAPA - 2});
+                            p2.bullets.push_back({p2.x, ALTURA_MAPA - 2, 0, -1});
                         }
                     }
                 }
@@ -320,8 +378,15 @@ void selectShip(int playerIndex) {
             std::string desc_line = " " + currentShip.description;
             std::cout << (char)186; setConsoleColor(11); std::cout << std::left << std::setw(menuWidth) << desc_line; resetConsoleColor(); std::cout << (char)186;
             setCursorPosition(menuStartX, 12 + shipOptions.size());
-            std::string attributes = std::string("Atributos: Movimento ") + (currentShip.moveCooldown.count() == 50 ? "Rapido" : "Normal") + " (" + std::to_string(currentShip.moveCooldown.count()) + "ms), " + (currentShip.initialMultiShotActive ? "Tiro Multiplo" : std::to_string(currentShip.initialMaxBullets) + " Tiro Max");
-            std::string attr_line = " " + attributes;
+            std::string attributes = std::string("Atributos: Movimento ") + (currentShip.moveCooldown.count() == 50 ? "Rapido" : "Normal") + " (" + std::to_string(currentShip.moveCooldown.count()) + "ms), ";
+            if (currentShip.type == ShipType::TYPE_5_LASER_BEAM) {
+                attributes += "Laser";
+            } else if (currentShip.initialMultiShotActive) {
+                attributes += "Tiro Multiplo";
+            } else {
+                attributes += std::to_string(currentShip.initialMaxBullets) + " Tiro(s) Max";
+            }
+             std::string attr_line = " " + attributes;
             std::cout << (char)186; setConsoleColor(11); std::cout << std::left << std::setw(menuWidth) << attr_line; resetConsoleColor(); std::cout << (char)186;
             setCursorPosition(menuStartX, 13 + shipOptions.size());
             std::cout << (char)186 << std::string(menuWidth, ' ') << (char)186;

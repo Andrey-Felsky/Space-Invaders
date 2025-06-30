@@ -89,15 +89,15 @@ void updateBoss() {
         // Atira uma bala do centro do chefe
         int bulletX = boss.x + BOSS_WIDTH / 2;
         int bulletY = boss.y + BOSS_HEIGHT;
-        boss.bullets.push_back({bulletX, bulletY});
+        boss.bullets.push_back({bulletX, bulletY, 0, 1}); // dx=0, dy=1 (move down)
         boss.lastShotTime = now;
     }
 }
 
 void updateBossBullets() {
     for (auto it = boss.bullets.begin(); it != boss.bullets.end(); ) {
-        it->second++; // Move a bala para baixo
-        if (it->second >= ALTURA_MAPA) {
+        it->y++; // Move a bala para baixo
+        if (it->y >= ALTURA_MAPA) {
             it = boss.bullets.erase(it); // Remove se sair da tela
         } else {
             ++it;

@@ -7,7 +7,8 @@
 #include <string>
 #include <utility> // For std::pair
 
-struct Player; // Forward declaration to break circular dependency
+struct Player; // Forward declaration
+struct Boss;   // Forward declaration
  
 extern char mapa[ALTURA_MAPA][LARGURA_MAPA];
 extern bool inimigoVivo[ENEMY_ARRAY_MAX_SIZE];
@@ -23,7 +24,9 @@ enum class ShipType
     NONE,
     TYPE_1_FAST_SINGLE,
     TYPE_2_BALANCED_EXTRA,
-    TYPE_3_BALANCED_MULTI
+    TYPE_3_BALANCED_MULTI,
+    TYPE_4_DIAGONAL_REFLECT,
+    TYPE_5_LASER_BEAM
 };
 struct ShipConfig
 {
@@ -43,6 +46,7 @@ extern bool itemDropActive;
 extern int itemDropX, itemDropY;
 extern ItemType itemDropType; // Make sure ItemType is known (include constants.h or forward declare)
 
+extern Boss boss; // Now uses the forward declaration
 // Extern declarations for power-up timers for display purposes
 extern std::chrono::high_resolution_clock::time_point speedBoostEndTime;
 extern std::chrono::high_resolution_clock::time_point extraShotEndTime;

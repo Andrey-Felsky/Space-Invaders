@@ -1,6 +1,7 @@
 #include "mapa.h"
 #include "../utils/gameElements.h"
 #include "../logic/logic.h"
+#include "../player/player.h" // Needed for full Player and Bullet struct definitions
 #include "../utils/constants.h"
 #include <iostream>
 #include <windows.h>
@@ -120,8 +121,19 @@ void render(const Player players[2], float tempo)
     // Draw bullets for both players
     for (int i = 0; i < 2; ++i) {
         for (const auto &bullet : players[i].bullets) {
-            if (bullet.second >= 0 && bullet.second < ALTURA_MAPA && bullet.first >= 0 && bullet.first < LARGURA_MAPA)
-                mapa[bullet.second][bullet.first] = players[i].shipConfig.bulletChar;
+            if (players[i].shipConfig.type == ShipType::TYPE_5_LASER_BEAM) {
+                // Render a 1x3 vertical beam. bullet.y is the tip.
+                if (bullet.x >= 0 && bullet.x < LARGURA_MAPA) { // Check X once
+                    // The laser is 3 units long, starting from the bullet's Y position and extending downwards
+                    if (bullet.y >= 0 && bullet.y < ALTURA_MAPA) mapa[bullet.y][bullet.x] = players[i].shipConfig.bulletChar;
+                    if (bullet.y + 1 >= 0 && bullet.y + 1 < ALTURA_MAPA) mapa[bullet.y + 1][bullet.x] = players[i].shipConfig.bulletChar;
+                    if (bullet.y + 2 >= 0 && bullet.y + 2 < ALTURA_MAPA) mapa[bullet.y + 2][bullet.x] = players[i].shipConfig.bulletChar;
+                }
+            } else {
+                // Standard 1x1 bullet rendering
+                if (bullet.y >= 0 && bullet.y < ALTURA_MAPA && bullet.x >= 0 && bullet.x < LARGURA_MAPA)
+                    mapa[bullet.y][bullet.x] = players[i].shipConfig.bulletChar;
+            }
         }
     }
 
@@ -131,8 +143,8 @@ void render(const Player players[2], float tempo)
     // Draw boss bullets
     if (bossFightActive) {
         for (const auto &bullet : boss.bullets) {
-            if (bullet.second >= 0 && bullet.second < ALTURA_MAPA && bullet.first >= 0 && bullet.first < LARGURA_MAPA)
-                mapa[bullet.second][bullet.first] = 'V'; // Caractere do tiro do chefe
+            if (bullet.y >= 0 && bullet.y < ALTURA_MAPA && bullet.x >= 0 && bullet.x < LARGURA_MAPA)
+                mapa[bullet.y][bullet.x] = 'V'; // Caractere do tiro do chefe
         }
     }
 

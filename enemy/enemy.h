@@ -2,6 +2,7 @@
 #define ENEMY_H
 #include <chrono>
 #include <vector>
+#include "../player/player.h" // For Bullet struct definition
 
 #include "../utils/constants.h"
 
@@ -20,7 +21,7 @@ struct Boss {
     int health;
     bool active;
     int direction;
-    std::vector<std::pair<int, int>> bullets;
+    std::vector<Bullet> bullets; // Changed to Bullet struct
     std::chrono::high_resolution_clock::time_point lastShotTime;
 };
 

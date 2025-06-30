@@ -16,12 +16,35 @@ Barrier barriers[NUM_BARRIERS];
 // You should replace these with your actual implementations if they exist.
 void updatePlayerBullets() {
     for (int i = 0; i < 2; ++i) {
-        for (auto& bullet : players[i].bullets) {
-            bullet.second--; // Move bullet up
+        for (auto it = players[i].bullets.begin(); it != players[i].bullets.end(); ) {
+            // Apply movement
+            it->x += it->dx;
+            it->y += it->dy;
+
+            bool removed = false;
+
+            // Check for wall reflection only for the specific ship type
+            if (players[i].shipConfig.type == ShipType::TYPE_4_DIAGONAL_REFLECT) { // Diagonal Reflecting Bullets
+                if ((it->x <= 0 && it->dx < 0) || (it->x >= LARGURA_MAPA - 1 && it->dx > 0)) {
+                    it->dx *= -1;
+                }
+            }
+
+            // Remove bullet if it goes off-screen
+            if (players[i].shipConfig.type == ShipType::TYPE_5_LASER_BEAM) { // Laser 1x3
+                if (it->y + 2 < 0) { // Entire 1x3 laser is off-screen (bottom of laser is above top of screen)
+                    it = players[i].bullets.erase(it);
+                    removed = true;
+                }
+            } else if (it->y < 0 || (players[i].shipConfig.type != ShipType::TYPE_4_DIAGONAL_REFLECT && (it->x < 0 || it->x >= LARGURA_MAPA))) { // Standard or Diagonal
+                it = players[i].bullets.erase(it);
+                removed = true;
+            }
+            
+            if (!removed) {
+                ++it;
+            }
         }
-        players[i].bullets.erase(std::remove_if(players[i].bullets.begin(), players[i].bullets.end(),
-                                           [](const auto& b){ return b.second < 0; }),
-                            players[i].bullets.end());
     }
 }
 void updateTiroInimigo() {
@@ -137,58 +160,74 @@ void checkCollisions() {
     for (int p_idx = 0; p_idx < 2; ++p_idx) {
         for (auto itBullet = players[p_idx].bullets.begin(); itBullet != players[p_idx].bullets.end(); ) {
             bool bulletHitSomething = false;
-            int bulletX = itBullet->first;
-            int bulletY = itBullet->second;
+            bool bulletRemoved = false; // Flag to indicate if the bullet was removed from the vector
+            int bulletX = itBullet->x;
+            int bulletY = itBullet->y;
 
             // 1. Checar colisão com Barreiras
-            for (int i = 0; i < NUM_BARRIERS; ++i) {
-                if (bulletX >= barriers[i].x && bulletX < barriers[i].x + BARRIER_WIDTH &&
-                    bulletY >= barriers[i].y && bulletY < barriers[i].y + BARRIER_HEIGHT) {
-                    
-                    int barrierCol = bulletX - barriers[i].x;
-                    int barrierRow = bulletY - barriers[i].y;
+            // Lasers do not hit barriers, only regular bullets do.
+            if (players[p_idx].shipConfig.type != ShipType::TYPE_5_LASER_BEAM) {
+                for (int i = 0; i < NUM_BARRIERS; ++i) {
+                    if (bulletX >= barriers[i].x && bulletX < barriers[i].x + BARRIER_WIDTH &&
+                        bulletY >= barriers[i].y && bulletY < barriers[i].y + BARRIER_HEIGHT) {
+                        
+                        int barrierCol = bulletX - barriers[i].x;
+                        int barrierRow = bulletY - barriers[i].y;
 
-                    if (barriers[i].shape[barrierRow][barrierCol] != ' ') {
-                        barriers[i].shape[barrierRow][barrierCol] = ' '; // Danifica a barreira
-                        bulletHitSomething = true;
-                        break; // A bala só pode atingir uma barreira
+                        if (barriers[i].shape[barrierRow][barrierCol] != ' ') {
+                            barriers[i].shape[barrierRow][barrierCol] = ' '; // Danifica a barreira
+                            bulletHitSomething = true;
+                            break; // A bala só pode atingir uma barreira
+                        }
                     }
                 }
             }
 
             if (bulletHitSomething) {
                 itBullet = players[p_idx].bullets.erase(itBullet);
+                bulletRemoved = true;
                 continue; // Pula para a próxima bala
             }
 
             // 2. Checar colisão com Inimigos (se não atingiu uma barreira)
             for (int i = 0; i < TOTAL_INITIAL_ENEMIES; ++i) {
-                if (inimigoVivo[i] && bulletX == inimigos[i][0] && bulletY == inimigos[i][1]) {
-                    inimigoVivo[i] = false;
-                    players[p_idx].score += 10;
-                    enemiesDefeatedCount++;
-
-                    explosionActiveEnemy = true;
-                    explosionEnemyX = inimigos[i][0];
-                    explosionEnemyY = inimigos[i][1];
-                    enemyExplosionStartTime = now;
-                    Beep(ENEMY_EXPLOSION_FREQ, ENEMY_EXPLOSION_DUR);
-
-                    if (rand() % 100 < currentItemDropChance) {
-                        itemDropActive = true;
-                        itemDropX = inimigos[i][0];
-                        itemDropY = inimigos[i][1];
-                        itemDropType = static_cast<ItemType>(rand() % 6);
+                if (inimigoVivo[i]) { // Only check against live enemies
+                    bool hit = false;
+                    if (players[p_idx].shipConfig.type == ShipType::TYPE_5_LASER_BEAM) {
+                        // Check collision for a 1x3 vertical beam
+                        if (bulletX == inimigos[i][0] && // Same column
+                            (bulletY == inimigos[i][1] || bulletY + 1 == inimigos[i][1] || bulletY + 2 == inimigos[i][1])) {
+                            hit = true;
+                        }
+                    } else {
+                        // Standard 1x1 bullet collision
+                        if (bulletX == inimigos[i][0] && bulletY == inimigos[i][1]) {
+                            hit = true;
+                        }
                     }
 
-                    bulletHitSomething = true;
-                    break; // A bala só pode atingir um inimigo
+                    if (hit) {
+                        inimigoVivo[i] = false;
+                        players[p_idx].score += 10;
+                        enemiesDefeatedCount++;
+                        explosionActiveEnemy = true;
+                        explosionEnemyX = inimigos[i][0];
+                        explosionEnemyY = inimigos[i][1];
+                        enemyExplosionStartTime = now;
+                        Beep(ENEMY_EXPLOSION_FREQ, ENEMY_EXPLOSION_DUR);
+                        if (rand() % 100 < currentItemDropChance) {
+                            itemDropActive = true; itemDropX = inimigos[i][0]; itemDropY = inimigos[i][1]; itemDropType = static_cast<ItemType>(rand() % 6);
+                        }
+                        if (players[p_idx].shipConfig.type != ShipType::TYPE_5_LASER_BEAM) { // Regular bullets are removed
+                            itBullet = players[p_idx].bullets.erase(itBullet);
+                            bulletRemoved = true;
+                            break; // A bala só pode atingir um inimigo
+                        }
+                    }
                 }
             }
 
-            if (bulletHitSomething) {
-                itBullet = players[p_idx].bullets.erase(itBullet);
-            } else {
+            if (!bulletRemoved) { // Only advance if the bullet was not removed
                 ++itBullet; // Avança apenas se nada foi atingido
             }
         }
@@ -198,20 +237,39 @@ void checkCollisions() {
     if (bossFightActive && boss.health > 0) {
         for (int p_idx = 0; p_idx < 2; ++p_idx) {
             for (auto itBullet = players[p_idx].bullets.begin(); itBullet != players[p_idx].bullets.end(); ) {
-                int bulletX = itBullet->first;
-                int bulletY = itBullet->second;
+                bool bulletRemoved = false;
+                int bulletX = itBullet->x;
+                int bulletY = itBullet->y;
+                bool hit = false;
 
-                // Checa se a bala está dentro da área do chefe
-                if (bulletX >= boss.x && bulletX < boss.x + BOSS_WIDTH &&
-                    bulletY >= boss.y && bulletY < boss.y + BOSS_HEIGHT) {
-                    
+                if (players[p_idx].shipConfig.type == ShipType::TYPE_5_LASER_BEAM) {
+                    // Check collision for a 1x3 vertical beam against the boss area
+                    if (bulletX >= boss.x && bulletX < boss.x + BOSS_WIDTH) { // Is the laser column inside the boss's horizontal span
+                        // Check if any of the 3 vertical parts of the laser overlap with the boss's vertical span
+                        int laserTop = bulletY;
+                        int laserBottom = bulletY + 2;
+                        int bossTop = boss.y;
+                        int bossBottom = boss.y + BOSS_HEIGHT - 1;
+                        if (std::max(laserTop, bossTop) <= std::min(laserBottom, bossBottom)) {
+                            hit = true; // Laser hits boss, but doesn't disappear
+                        }
+                    }
+                } else {
+                    // Standard 1x1 bullet collision
+                    if (bulletX >= boss.x && bulletX < boss.x + BOSS_WIDTH &&
+                        bulletY >= boss.y && bulletY < boss.y + BOSS_HEIGHT) {
+                        hit = true; // Regular bullet hits boss and is removed
+                    }
+                }
+
+                if (hit) {
                     boss.health--; // Reduz a vida do chefe
                     itBullet = players[p_idx].bullets.erase(itBullet); // Remove a bala
                     Beep(300, 50); // Som de dano no chefe
+                    bulletRemoved = true;
+                }
 
-                    // Opcional: Adicionar uma pequena explosão no local do impacto
-
-                } else {
+                if (!bulletRemoved) { // Only advance if the bullet was not removed
                     ++itBullet;
                 }
             }
@@ -267,8 +325,8 @@ void checkCollisions() {
     // --- Colisões de Tiros do Chefe ---
     for (auto itBullet = boss.bullets.begin(); itBullet != boss.bullets.end(); ) {
         bool bulletHitSomething = false;
-        int bulletX = itBullet->first;
-        int bulletY = itBullet->second;
+        int bulletX = itBullet->x; // Access x from Bullet struct
+        int bulletY = itBullet->y; // Access y from Bullet struct
 
         // 1. Checar colisão com Barreiras
         for (int i = 0; i < NUM_BARRIERS; ++i) {

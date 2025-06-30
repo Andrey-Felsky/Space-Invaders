@@ -28,6 +28,10 @@ const int BOSS_WIDTH = 7; // Largura do chefe em caracteres
 const int BOSS_HEIGHT = 3; // Altura do chefe em caracteres
 const std::chrono::milliseconds BOSS_SHOT_INTERVAL(1200); // Intervalo de tiro do chefe
 
+// Laser constants
+const std::chrono::milliseconds LASER_DURATION(250);
+const char LASER_CHAR = '|';
+
 const std::chrono::milliseconds ITEM_MOVE_INTERVAL(100);
 
 // Enum for item types
