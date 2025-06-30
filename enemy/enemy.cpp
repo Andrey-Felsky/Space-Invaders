@@ -1,29 +1,107 @@
 #include "enemy.h"
-
-
+#include <chrono>
+#include <cstdlib> // Para rand
+using namespace std;
 int dirInimigo = 1;
 
-void initEnemy() {
-    for (int i = 0; i < 5; i++) {
-        inimigos[i][0] = 2 + i * 5; // x
-        inimigos[i][1] = 2;         // y
+// --- Variavel Global do Boss---
+// A definição real está em main.cpp, aqui são apenas usadas pelas funções
+extern Boss boss;
+extern bool bossFightActive;
+
+void initEnemy()
+{
+    int startX = (LARGURA_MAPA - (NUM_ENEMY_COLS_INIT * ENEMY_INIT_SPACING_X)) / 2;
+    int startY = 2;
+
+    for (int i = 0; i < TOTAL_INITIAL_ENEMIES; i++)
+    {
+        int row = i / NUM_ENEMY_COLS_INIT;
+        int col = i % NUM_ENEMY_COLS_INIT;
+        inimigos[i][0] = startX + col * ENEMY_INIT_SPACING_X;
+        inimigos[i][1] = startY + row * ENEMY_INIT_SPACING_Y;
         inimigoVivo[i] = true;
+    }
+    dirInimigo = 1;
+}
+
+void moveEnemies()
+{
+    auto now = chrono::high_resolution_clock::now();
+    if (now < enemyFreezeEndTime)
+    {
+        return; // Inimigos estão congelados
+    }
+
+    bool moveDown = false;
+    for (int i = 0; i < TOTAL_INITIAL_ENEMIES; i++)
+    {
+        if (inimigoVivo[i])
+        {
+            if ((inimigos[i][0] >= LARGURA_MAPA - 1 && dirInimigo == 1) || (inimigos[i][0] <= 0 && dirInimigo == -1))
+            {
+                moveDown = true;
+                break;
+            }
+        }
+    }
+
+    if (moveDown)
+    {
+        for (int i = 0; i < TOTAL_INITIAL_ENEMIES; i++)
+        {
+            inimigos[i][1]++;
+        }
+        dirInimigo *= -1;
+    }
+    else
+    {
+        for (int i = 0; i < TOTAL_INITIAL_ENEMIES; i++)
+        {
+            inimigos[i][0] += dirInimigo;
+        }
     }
 }
 
-void moveEnemies() {
-    for (int i = 0; i < 5; i++) {
-        inimigos[i][0] += dirInimigo;
+// --- Funcao implementar do Boss ---
+
+void initBoss() {
+    boss.active = true;
+    boss.health = BOSS_INITIAL_HEALTH;
+    boss.x = (LARGURA_MAPA - BOSS_WIDTH) / 2;
+    boss.y = 1; // Posição Y no topo da tela
+    boss.direction = 1;
+    boss.bullets.clear();
+    boss.lastShotTime = chrono::high_resolution_clock::now();
+}
+
+void updateBoss() {
+    if (!boss.active || boss.health <= 0) return;
+
+    // --- Movimento do Chefe ---
+    boss.x += boss.direction;
+    if (boss.x <= 0 || boss.x + BOSS_WIDTH >= LARGURA_MAPA) {
+        boss.direction *= -1; // Inverte a direção ao atingir a borda
     }
 
-    // inverter direção se algum bater na borda
-    for (int i = 0; i < 5; i++) {
-        if (inimigoVivo[i] && (inimigos[i][0] <= 0 || inimigos[i][0] >= 29)) {
-            dirInimigo *= -1;
-            for (int j = 0; j < 5; j++) {
-                inimigos[j][1]++; // desce todos
-            }
-            break;
+    // --- Ataque do Chefe ---
+    auto now = chrono::high_resolution_clock::now();
+    if (now - boss.lastShotTime > BOSS_SHOT_INTERVAL) {
+        // Atira uma bala do centro do chefe
+        int bulletX = boss.x + BOSS_WIDTH / 2;
+        int bulletY = boss.y + BOSS_HEIGHT;
+        boss.bullets.push_back({bulletX, bulletY});
+        boss.lastShotTime = now;
+    }
+}
+
+void updateBossBullets() {
+    for (auto it = boss.bullets.begin(); it != boss.bullets.end(); ) {
+        it->second++; // Move a bala para baixo
+        if (it->second >= ALTURA_MAPA) {
+            it = boss.bullets.erase(it); // Remove se sair da tela
+        } else {
+            ++it;
         }
     }
 }
