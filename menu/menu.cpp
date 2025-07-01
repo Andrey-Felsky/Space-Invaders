@@ -2,18 +2,19 @@
 #include <iostream>
 #include <windows.h>
 #include <conio.h>
-#include <chrono> // Necessário para std::chrono::high_resolution_clock
-#include <thread> // Necessário para std::this_thread::sleep_for
-#include <vector> // Necessário para std::vector
-#include <string> // Necessário para std::string
+#include <chrono> // Necessário para chrono::high_resolution_clock
+#include <thread> // Necessário para this_thread::sleep_for
+#include <vector> // Necessário para vector
+#include <string> // Necessário para string
 #include "../ranking/score.h"
 #include "../utils/cleanScreen/cleanScreen.h"
 #include "../utils/constants.h" // Para a enum Difficulty
 #include "../utils/console_utils.h" // Inclui as funções utilitárias de console
+using namespace std;
 
 void printMenuTitle(int shinePosition)
 {
-    const std::vector<std::string> titleLines = {
+    const vector<string> titleLines = {
         "        ___ ___  _   ___ ___            ",
         "       / __| _ \\/_\\ / __| __|             ",
         "       \\__ \\  _/ _ \\ (__| _|               ",
@@ -25,7 +26,7 @@ void printMenuTitle(int shinePosition)
     const int shineWidth = 4;
     const int shineColor = 15; // Branco Brilhante
 
-    std::cout << "\n"; // Adiciona o espaço que o R"()" original tinha
+    cout << "\n"; // Adiciona o espaço que o R"()" original tinha
     for (size_t i = 0; i < titleLines.size(); ++i)
     {
         int baseColor = (i < 4) ? 11 : 12; // Ciano para "SPACE", Vermelho para "INVADERS"
@@ -41,11 +42,11 @@ void printMenuTitle(int shinePosition)
             {
                 setConsoleColor(baseColor);
             }
-            std::cout << titleLines[i][j];
+            cout << titleLines[i][j];
         }
-        std::cout << std::endl;
+        cout << endl;
     }
-    std::cout << "\n";
+    cout << "\n";
 }
 
 // Variável global de dificuldade definida em main.cpp
@@ -57,40 +58,40 @@ void exibirInstrucoes()
 {
     cleanScreen();
     setConsoleColor(11); // Ciano claro para o título
-    std::cout << "\n\n";
-    std::cout << "   ==================== INSTRUCOES ====================\n\n";
+    cout << "\n\n";
+    cout << "   ==================== INSTRUCOES ====================\n\n";
     setConsoleColor(14); // Amarelo para subtítulos
-    std::cout << "   OBJETIVO:\n";
+    cout << "   OBJETIVO:\n";
     setConsoleColor(7); // Branco para texto normal
-    std::cout << "   - Derrote todos os inimigos para vencer a partida.\n";
-    std::cout << "   - Nao deixe os inimigos invadirem sua base (chegarem ao chao).\n";
-    std::cout << "   - O jogo termina se ambos os jogadores perderem todas as vidas.\n\n";
+    cout << "   - Derrote todos os inimigos para vencer a partida.\n";
+    cout << "   - Nao deixe os inimigos invadirem sua base (chegarem ao chao).\n";
+    cout << "   - O jogo termina se ambos os jogadores perderem todas as vidas.\n\n";
     
     setConsoleColor(14);
-    std::cout << "   CONTROLES - JOGADOR 1:\n";
+    cout << "   CONTROLES - JOGADOR 1:\n";
     setConsoleColor(7);
-    std::cout << "   - Mover: Teclas 'A' e 'D'   |   Atirar: Tecla 'ESPACO'\n\n";
+    cout << "   - Mover: Teclas 'A' e 'D'   |   Atirar: Tecla 'ESPACO'\n\n";
 
     setConsoleColor(14);
-    std::cout << "   CONTROLES - JOGADOR 2:\n";
+    cout << "   CONTROLES - JOGADOR 2:\n";
     setConsoleColor(7);
-    std::cout << "   - Mover: Setas Esquerda/Direita   |   Atirar: Seta para Cima\n\n";
+    cout << "   - Mover: Setas Esquerda/Direita   |   Atirar: Seta para Cima\n\n";
 
     setConsoleColor(14);
-    std::cout << "   POWER-UPS:\n";
+    cout << "   POWER-UPS:\n";
     setConsoleColor(7);
-    std::cout << "   - Mova sua nave para coletar os itens que caem dos inimigos!\n\n";
+    cout << "   - Mova sua nave para coletar os itens que caem dos inimigos!\n\n";
 
     setConsoleColor(11);
-    std::cout << "   ====================================================\n\n";
+    cout << "   ====================================================\n\n";
     setConsoleColor(7);
-    std::cout << "   Pressione qualquer tecla para voltar ao menu...";
+    cout << "   Pressione qualquer tecla para voltar ao menu...";
     _getch(); // Espera por qualquer tecla
 }
 
 void selectDifficulty()
 {
-    const std::vector<std::pair<std::string, Difficulty>> difficultyOptions = {
+    const vector<pair<string, Difficulty>> difficultyOptions = {
         {"Facil", Difficulty::FACIL},
         {"Normal", Difficulty::NORMAL},
         {"Dificil", Difficulty::DIFICIL},
@@ -113,7 +114,7 @@ void selectDifficulty()
     {
         cleanScreen();
         setConsoleColor(7);
-        std::cout << "\n\n   === SELECIONE A DIFICULDADE ===\n\n";
+        cout << "\n\n   === SELECIONE A DIFICULDADE ===\n\n";
 
         for (size_t i = 0; i < difficultyOptions.size(); ++i)
         {
@@ -121,10 +122,10 @@ void selectDifficulty()
             if (i == selected_option)
             {
                 setConsoleColor(14); // Yellow
-                std::cout << "                > ";
+                cout << "                > ";
             }
             else {
-                std::cout << "                  ";
+                cout << "                  ";
             }
 
             // Imprime o texto da opção, colorindo a que está ativa em verde
@@ -135,22 +136,22 @@ void selectDifficulty()
             else {
                 setConsoleColor(7); // White
             }
-            std::cout << difficultyOptions[i].first;
+            cout << difficultyOptions[i].first;
 
             // Imprime o cursor de seleção
             if (i == selected_option)
             {
                 setConsoleColor(14); // Yellow
-                std::cout << " <\n";
+                cout << " <\n";
             }
             else {
-                std::cout << "  \n";
+                cout << "  \n";
             }
         }
 
         setConsoleColor(7);
-        std::cout << "\n\n   Use as setas para navegar e ENTER para confirmar.";
-        std::cout << "\n   Pressione ESC para voltar ao menu.";
+        cout << "\n\n   Use as setas para navegar e ENTER para confirmar.";
+        cout << "\n   Pressione ESC para voltar ao menu.";
 
         key = _getch();
         if (key == 0 || key == -32)
@@ -180,7 +181,7 @@ void selectDifficulty()
 void menu()
 {
     hideCursor(); // Usa a função de console_utils.h
-    std::vector<std::string> options = {"Jogar (1P)", "Jogar (2P)", "Dificuldade", "Instrucoes", "Ranking", "Sair"};
+    vector<string> options = {"Jogar (1P)", "Jogar (2P)", "Dificuldade", "Instrucoes", "Ranking", "Sair"};
     int selected_option = 0;
     int prev_selected_option = -1; // Para detectar mudança na seleção
     char key;
@@ -188,8 +189,8 @@ void menu()
     int animation_pos = -10;                                         // Posição inicial do brilho (fora da tela)
     const int title_width = 60;                                      // Largura aproximada do título para o reset da animação
     const int shine_width = 5;                                       // Largura do brilho
-    auto last_anim_time = std::chrono::high_resolution_clock::now(); // Controle de tempo da animação
-    const std::chrono::milliseconds anim_interval(40);               // Intervalo de atualização (~25 FPS)
+    auto last_anim_time = chrono::high_resolution_clock::now(); // Controle de tempo da animação
+    const chrono::milliseconds anim_interval(40);               // Intervalo de atualização (~25 FPS)
     bool redrawTitle = true;
     bool redrawOptions = true;
 
@@ -198,7 +199,7 @@ void menu()
     while (true)
     {
         // --- Lógica da Animação ---
-        auto now = std::chrono::high_resolution_clock::now();
+        auto now = chrono::high_resolution_clock::now();
         if (now - last_anim_time >= anim_interval)
         {
             last_anim_time = now;
@@ -279,7 +280,7 @@ void menu()
                     break;
                 case 4: // Ranking
                     showRanking();
-                    std::cout << "\n\nPressione qualquer tecla para voltar ao menu...";
+                    cout << "\n\nPressione qualquer tecla para voltar ao menu...";
                     resetConsoleColor(); // Garante que a cor seja resetada antes de esperar input
                     _getch();
                     cleanScreen();
@@ -290,7 +291,7 @@ void menu()
                     Beep(300, 200); // Som de saída
                     cleanScreen();
                     setConsoleColor(7); // Define a cor para branco
-                    const std::vector<std::string> gameOverLines = {
+                    const vector<string> gameOverLines = {
                         "::::::::::: :::    :::     :::     ::::    ::: :::    ::: ::::::::  ",
                         "    :+:     :+:    :+:   :+: :+:   :+:+:   :+: :+:   :+: :+:    :+: ",
                         "    +:+     +:+    +:+  +:+   +:+  :+:+:+  +:+ +:+  +:+  +:+        ",
@@ -301,9 +302,9 @@ void menu()
 
                     for (const auto& line : gameOverLines)
                     {
-                        std::cout << line << std::endl;
+                        cout << line << endl;
                     }
-                    std::cout << "\n\n";
+                    cout << "\n\n";
                     exit(0);
                 }
             }
